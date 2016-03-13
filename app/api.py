@@ -4,4 +4,4 @@ from flask.ext.restful import Api
 import controllers.users
 
 api = Api(app)
-api.add_resource(controllers.users.UserController, '/v1/users')
+api.add_resource(controllers.users.UserController, '/v1/users', '/v1/users/<id>')

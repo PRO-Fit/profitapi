@@ -4,6 +4,7 @@ from webargs.flaskparser import use_args
 from flask.ext.restful import abort
 
 from app.models.users import User
+from app.common.errors import error_enum
 
 
 class UserController(Resource):
@@ -19,18 +20,16 @@ class UserController(Resource):
         'contact_number': fields.Int(required=True),
         'injuries': fields.Str(missing='')
     }
-    user_args_get = {
-        'user_id': fields.Int(required=True)
-    }
 
-    @use_args(user_args_get)
-    def get(self, args):
-        result = User.get_user(args['user_id'])
+    def get(self, id=None):
+        if not id:
+            abort(http_status_code=404, error_code=error_enum.user_id_missing)
+        result = User.get_user(id)
         if result:
             for record in result:
                 record['dob'] = str(record['dob'])
         else:
-            abort(http_status_code=400)
+            abort(http_status_code=400, error_code=error_enum.user_id_not_found)
         return result
 
     @use_args(user_args_post)
