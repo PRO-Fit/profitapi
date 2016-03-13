@@ -9,6 +9,7 @@ from app.common.errors import error_enum
 
 class UserController(Resource):
     user_args_post = {
+        'user_id': fields.Str(required=True),
         'first_name': fields.Str(required=True),
         'last_name': fields.Str(required=True),
         'points': fields.Int(missing=0),
@@ -18,13 +19,26 @@ class UserController(Resource):
         'gender': fields.Str(required=True),
         'email': fields.Str(required=True),
         'contact_number': fields.Int(required=True),
-        'injuries': fields.Str(missing='')
+        'injuries': fields.Str(missing=''),
+        'activity_preferences': fields.Nested({
+            'run': fields.Int(missing=1),
+            'jog': fields.Int(missing=1),
+            'walk': fields.Int(missing=1),
+            'bike': fields.Int(missing=1),
+            'gym': fields.Int(missing=1),
+            'sport': fields.Int(missing=1),
+            'hike': fields.Int(missing=1),
+            'aerobic': fields.Int(missing=1),
+            'dance': fields.Int(missing=1),
+            'yoga': fields.Int(missing=1),
+            'swim': fields.Int(missing=1)
+        })
     }
 
-    def get(self, id=None):
-        if not id:
+    def get(self, user_id=None):
+        if not user_id:
             abort(http_status_code=404, error_code=error_enum.user_id_missing)
-        result = User.get_user(id)
+        result = User.get_user(user_id)
         if result:
             for record in result:
                 record['dob'] = str(record['dob'])
@@ -34,4 +48,10 @@ class UserController(Resource):
 
     @use_args(user_args_post)
     def post(self, args):
-        return {'user_id': User.insert_user(args)}
+        activity_pref = args.pop('activity_preferences')
+        user_details = args
+        user_id = User.insert_user(user_details)
+        if user_id is -1:
+            abort(http_status_code=400, error_code=error_enum.user_id_duplicate)
+        User.insert_user_activity_pref(user_id, activity_pref)
+        return {'user_id': user_id}

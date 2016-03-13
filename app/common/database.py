@@ -1,6 +1,7 @@
 import mysql.connector
 import logging
 from config import DB_CONFIG
+from mysql.connector import errors
 from mysql.connector import errorcode
 
 
@@ -21,12 +22,15 @@ class Db():
             return cnx
 
     @staticmethod
-    def execute_insert_query(query, data):
+    def execute_insert_query(query, data=None):
         cnx = Db.get_connection()
         cursor = cnx.cursor()
         row_id = -1
         try:
-            cursor.execute(query, data)
+            if data:
+                cursor.execute(query, data)
+            else:
+                cursor.execute(query)
             row_id = cursor.lastrowid
             cnx.commit()
         except mysql.connector.Error as err:
@@ -37,13 +41,23 @@ class Db():
         return row_id
 
     @staticmethod
-    def execute_select_query(query, parameters):
+    def execute_select_query(query, parameters=None):
         cnx = Db.get_connection()
         cursor = cnx.cursor(dictionary=True)
         result = []
-        cursor.execute(query % parameters)
-        for row in cursor:
-            result.append(row)
+        try:
+            if parameters:
+                cursor.execute(query % parameters)
+            else:
+                cursor.execute(query)
+            for row in cursor:
+                result.append(row)
+        except errors.InternalError or errors.DatabaseError as err:
+            print err
+        finally:
+            cursor.close()
+            cnx.close()
+
         cursor.close()
         cnx.close()
         return result
