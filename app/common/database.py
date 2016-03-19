@@ -62,3 +62,21 @@ class Db():
         cnx.close()
         return result
 
+    @staticmethod
+    def execute_update_query(query, parameters=None):
+        cnx = Db.get_connection()
+        cursor = cnx.cursor()
+        success = True
+        try:
+            if parameters:
+                cursor.execute(query, parameters)
+            else:
+                cursor.execute(query)
+            cnx.commit()
+        except mysql.connector.Error as err:
+            print err
+            success = False
+        finally:
+            cursor.close()
+            cnx.close()
+        return success
