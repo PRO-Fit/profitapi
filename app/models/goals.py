@@ -16,14 +16,12 @@ class Goal(object):
                     FROM t_goal
                     WHERE
                       user_id = '%(user_id)s'
-                      AND (start_datetime >= '%(start_today)s'
-                      OR end_datetime <= '%(end_today)s')
+                      AND end_datetime >= '%(today)s'
                       """
         goal_id_clause = """ AND id = %(goal_id)s"""
         parameters = {
             'user_id': user_id,
-            'start_today': Util.get_current_time(),
-            'end_today': Util.get_current_time()
+            'today': Util.get_current_time()
         }
         if goal_id:
             query += goal_id_clause
@@ -87,8 +85,6 @@ class Goal(object):
         for goal in user_active_goals:
             start = goal.get('start_datetime')
             end = goal.get('end_datetime')
-            if start < new_start < end or start < new_end < end or new_start < start < new_end:
+            if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                 return True
-                break
-            else:
-                continue
+        return False
