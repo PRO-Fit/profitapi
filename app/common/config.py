@@ -6,6 +6,7 @@
 #     'raise_on_warnings': True
 # }
 
+# Amazon RDS Connection Details
 DB_CONFIG = {
     'user': 'root',
     'password': 'pr0f1tadmin',
