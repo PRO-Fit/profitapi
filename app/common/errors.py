@@ -1,17 +1,11 @@
 from collections import namedtuple
+from error_tokens.calendar import tokens as calendar_errors
+from error_tokens.user import tokens as user_errors
+from error_tokens.database import tokens as database_errors
 
-_error_tokens = [
-    'user_id_missing',
-    'user_id_not_found',
-    'user_id_duplicate',
-    'calendar_exception',
-    'email_add_already_present',
-    'email_not_found',
-    'goal_id_missing',
-    'database_error_inserting',
-    'database_error_updating',
-    'database_error_deleting',
-    'goal_overlap'
-]
-
-error_enum = namedtuple('Errors', _error_tokens)(*_error_tokens)
+error_enum = namedtuple(
+    'Errors',
+    calendar_errors + user_errors + database_errors
+)(
+    *calendar_errors + user_errors + database_errors
+)
