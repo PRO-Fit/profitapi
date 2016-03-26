@@ -66,16 +66,16 @@ class Db():
     def execute_update_query(query, parameters=None):
         cnx = Db.get_connection()
         cursor = cnx.cursor()
-        success = True
+        success = 1
         try:
             if parameters:
-                cursor.execute(query, parameters)
+                cursor.execute(query % parameters)
             else:
                 cursor.execute(query)
             cnx.commit()
         except mysql.connector.Error as err:
             print err
-            success = False
+            success = -1
         finally:
             cursor.close()
             cnx.close()
