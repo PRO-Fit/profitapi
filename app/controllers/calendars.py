@@ -5,28 +5,16 @@ from flask.ext.restful import abort
 from app.common.errors import error_enum
 from app.common.config import CAL_CONFIG as config
 from app.common.temp_data import database, session
-
 from flask import redirect, make_response
 import requests
-from app.models.calendars import Calendar
+from app.models.calendars import CalendarModel
 
 
-class CalendarController(Resource):
-
-    # def post(self, user_id=None):
-    #     if not user_id:
-    #         abort(http_status_code=404, error_code=error_enum.user_id_missing)
-    #     result = User.get_user(user_id)
-    #     if result:
-    #         for record in result:
-    #             record['dob'] = str(record['dob'])
-    #     else:
-    #         abort(http_status_code=400, error_code=error_enum.user_id_not_found)
-    #     return result
+class CalendarAuthController(Resource):
 
     def get(self, user_id=None, email=None):
         if user_id is not None and email is not None:
-            records = Calendar.check_email(email)
+            records = CalendarModel.check_email(email)
             if records>0 :
                 abort(http_status_code=400, error_code = error_enum.email_add_already_present)
             else:
@@ -39,8 +27,16 @@ class CalendarController(Resource):
         else:
             return "Error parsing parameters"
 
+class CalendarController(Resource):
 
-class CalendarRedirectController(Resource):
+    def delete(self, email=None):
+        if email is not None:
+            CalendarModel.delete_email(email)
+            return "", 200
+        else:
+            abort(http_status_code=400, error_code = error_enum.email_not_found)
+
+class CalendarAuthRedirectController(Resource):
     calendar_args = {
         'code': fields.Str(required=True)
     }
@@ -74,7 +70,7 @@ class CalendarRedirectController(Resource):
                             'refresh_token':credjson.get('refresh_token', None), 'account':'gmail'}
         print database
         print "added to databse -----------------------------------------------------------------------------------------"
-        result = Calendar.add_calendar(calendar_details)
+        result = CalendarModel.add_calendar(calendar_details)
         if not result:
             abort(http_status_code=404, error_code=error_enum.calendar_exception)
         else:
@@ -99,13 +95,3 @@ class CalendarRedirectController(Resource):
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             return response
 
-    # def post(self, user_id=None, email=None):
-    #     if user_id is not None and email is not None:
-    #         session[email] = user_id
-    #         database[user_id] = {}
-    #         auth_uri = ('https://accounts.google.com/o/oauth2/v2/auth?response_type=code'
-    #                 '&client_id={}&redirect_uri={}&scope={}&login_hint={}&access_type=offline')\
-    #         .format(config['CLIENT_ID'], config['REDIRECT_URI'], config['SCOPE'], email)
-    #         return redirect(auth_uri)
-    #     else:
-    #         return "Error parsing parameters"

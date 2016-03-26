@@ -17,5 +17,6 @@ api.add_resource(controllers.users.UserController, '/v1/users', '/v1/users/<user
 
 
 
-api.add_resource(controllers.calendars.CalendarController, '/v1/calendars/google/oauth2/<user_id>/<email>')
-api.add_resource(controllers.calendars.CalendarRedirectController, '/v1/calendars/google/oauth2callback')
+api.add_resource(controllers.calendars.CalendarAuthController, '/v1/calendars/google/oauth2/<user_id>/<email>')
+api.add_resource(controllers.calendars.CalendarAuthRedirectController, '/v1/calendars/google/oauth2callback')
+api.add_resource(controllers.calendars.CalendarController, '/v1/calendars/google/<email>')

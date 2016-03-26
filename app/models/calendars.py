@@ -3,7 +3,7 @@ from app.common.util import Util
 from app.models.activity import Activity
 
 
-class Calendar(object):
+class CalendarModel(object):
     @staticmethod
     def add_calendar(calendar_details):
         get_account_details_query ="""SELECT id FROM t_external_account WHERE t_external_account.name = \"%s\"""" % calendar_details['account']
@@ -22,6 +22,11 @@ class Calendar(object):
         get_account_details_query ="""SELECT email FROM t_user_external_account WHERE email = \"%s\"""" % email_add
         ids = Db.execute_select_query(get_account_details_query)
         return len(ids)
+
+    @staticmethod
+    def delete_email(email_add):
+        delete_email_query = "DELETE from profit.t_user_external_account WHERE email= \"%s\"" %email_add
+        return Db.execute_update_query(delete_email_query)
 
     @staticmethod
     def insert_user_activity_pref(user_id, preference):
