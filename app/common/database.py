@@ -1,8 +1,10 @@
 import mysql.connector
 import logging
-from config import DB_CONFIG
 from mysql.connector import errors
 from mysql.connector import errorcode
+
+from config import DB_CONFIG
+from util import Util
 
 
 class Db():
@@ -57,10 +59,9 @@ class Db():
         finally:
             cursor.close()
             cnx.close()
-
         cursor.close()
         cnx.close()
-        return result
+        return Util.convert_datetime_to_str(result)
 
     @staticmethod
     def execute_update_query(query, parameters=None):

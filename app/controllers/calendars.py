@@ -4,37 +4,58 @@ from webargs.flaskparser import use_args
 from flask.ext.restful import abort
 from app.common.errors import error_enum
 from app.common.config import CAL_CONFIG as config
+from app.common.config import MAIL_GUN as email_config
 from app.common.temp_data import database, session
 from flask import redirect, make_response
 import requests
 from app.models.calendars import CalendarModel
+import json
 
 
 class CalendarAuthController(Resource):
 
+    @staticmethod
+    def validate_email(self, email=None):
+        result = requests.get(
+                "https://api.mailgun.net/v3/address/validate",
+                auth=("api", email_config['KEY']),
+                params={"address": email}).json()
+
+        is_valid = result['is_valid']
+        return is_valid
+
     def get(self, user_id=None, email=None):
         if user_id is not None and email is not None:
-            records = CalendarModel.check_email(email)
-            if records>0 :
-                abort(http_status_code=400, error_code = error_enum.email_add_already_present)
+            if self.validate_email(email):
+                records = CalendarModel.check_email(email)
+                if records>0 :
+                    abort(http_status_code=400, error_code = error_enum.email_add_already_present)
+                else:
+                    session[email] = user_id
+                    database[user_id] = {}
+                    auth_uri = ('https://accounts.google.com/o/oauth2/v2/auth?response_type=code'
+                                '&client_id={}&redirect_uri={}&scope={}&login_hint={}&access_type=offline')\
+                                .format(config['CLIENT_ID'], config['REDIRECT_URI'], config['SCOPE'], email)
+                    return redirect(auth_uri)
             else:
-                session[email] = user_id
-                database[user_id] = {}
-                auth_uri = ('https://accounts.google.com/o/oauth2/v2/auth?response_type=code'
-                    '&client_id={}&redirect_uri={}&scope={}&login_hint={}&access_type=offline')\
-                .format(config['CLIENT_ID'], config['REDIRECT_URI'], config['SCOPE'], email)
-                return redirect(auth_uri)
+                abort(http_status_code=400, error_code = error_enum.email_verification_failed)
         else:
             return "Error parsing parameters"
 
-class CalendarController(Resource):
+class UserCalendarController(Resource):
 
     def delete(self, email=None):
         if email is not None:
             CalendarModel.delete_email(email)
-            return "", 200
+            return None, 204
         else:
             abort(http_status_code=400, error_code = error_enum.email_not_found)
+
+    def get(self, user_id = None):
+        if user_id is not None:
+            return CalendarModel.get_all_emails(user_id), 200
+        else:
+            abort(http_status_code=400, error_code = error_enum.user_id_missing)
 
 class CalendarAuthRedirectController(Resource):
     calendar_args = {

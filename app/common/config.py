@@ -20,3 +20,9 @@ CAL_CONFIG = {
     'SCOPE' : 'https://www.googleapis.com/auth/calendar.readonly',
     'REDIRECT_URI' : 'http://127.0.0.1:5000/v1/calendars/google/oauth2callback'
 }
+
+# created mailgun acount to verify the email address whether it exists or not.
+# https://mailgun.com, key should be included in request to veriy email address
+MAIL_GUN = {
+    'KEY': 'pubkey-f7b4a94467c20f067b253337b5d06023'
+}

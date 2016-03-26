@@ -29,6 +29,11 @@ class CalendarModel(object):
         return Db.execute_update_query(delete_email_query)
 
     @staticmethod
+    def get_all_emails(user_id):
+        get_email_query = "SELECT id, user_id, email, created_datetime, modified_datetime from profit.t_user_external_account where user_id =  \"%s\"" %user_id
+        return Db.execute_select_query(get_email_query)
+
+    @staticmethod
     def insert_user_activity_pref(user_id, preference):
         query = """INSERT INTO t_user_activity_preference (workout_type_id, preference_priority, user_id) VALUES (
                   %s, %s, %s)"""

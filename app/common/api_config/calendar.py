@@ -1,4 +1,4 @@
-from app.controllers.calendars import CalendarAuthController, CalendarAuthRedirectController, CalendarController
+from app.controllers.calendars import CalendarAuthController, CalendarAuthRedirectController, UserCalendarController
 
 calendar_api_config = [
     {
@@ -14,9 +14,10 @@ calendar_api_config = [
         ]
     },
     {
-        'endpoint': CalendarController,
+        'endpoint': UserCalendarController,
         'routes': [
-            '/v1/calendars/google/<email>'
+            '/v1/users/<user_id>/calendars/google/<email>',
+            '/v1/users/<user_id>/calendars/google'
         ]
-    }
+    },
 ]
