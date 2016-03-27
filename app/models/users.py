@@ -11,6 +11,7 @@ class User(object):
                           %(first_name)s, %(last_name)s, %(points)s, %(weight)s, %(height)s, %(dob)s, %(gender)s,
                           %(email)s, %(contact_number)s, %(injuries)s, %(user_id)s, %(created_datetime)s,
                           %(modified_datetime)s)""")
+        user_details['contact_number'] = Util.clean_contact_number(user_details.get('contact_number'))
         user_details['created_datetime'] = Util.get_current_time()
         user_details['modified_datetime'] = Util.get_current_time()
         return Db.execute_insert_query(add_user_query, user_details)
@@ -79,3 +80,31 @@ class User(object):
             if success is -1:
                 break
         return success
+
+    @staticmethod
+    def get_user_connections(user_id, contacts=None):
+        if contacts:
+            get_users_by_contacts_query = """SELECT user_id FROM t_user WHERE contact_number IN ('{}')""".format(",".join(str(number) for number in contacts))
+            result = Db.execute_select_query(get_users_by_contacts_query)
+            connections = [record['user_id'] for record in result]
+            if user_id in connections:
+                connections.remove(user_id)
+            return connections
+        else:
+            query = """SELECT connected_user_id FROM t_user_connection WHERE user_id = '%s'""" % user_id
+            result = Db.execute_select_query(query)
+            connections = [record['connected_user_id'] for record in result]
+            if user_id in connections:
+                connections.remove(user_id)
+            return connections
+
+    @staticmethod
+    def set_user_connections(user_id, contacts):
+        connections = User.get_user_connections(user_id, contacts)
+        insert_connection_query = """INSERT INTO t_user_connection (user_id, connected_user_id) VALUES
+                                      (%(user_id)s, %(connected_user_id)s)"""
+        for connection in connections:
+            map_1_to_2 = {'user_id': str(user_id), 'connected_user_id': str(connection)}
+            map_2_to_1 = {'user_id': str(connection), 'connected_user_id': str(user_id)}
+            Db.execute_insert_query(insert_connection_query, map_1_to_2)
+            Db.execute_insert_query(insert_connection_query, map_2_to_1)

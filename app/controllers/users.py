@@ -5,6 +5,7 @@ from flask.ext.restful import abort
 
 from app.models.users import User
 from app.common.errors import error_enum
+from app.common.util import Util
 
 user_activity_preference_args = {
     'run': fields.Int(missing=1),
@@ -83,3 +84,21 @@ class UserPreferenceController(Resource):
         if User.set_user_activity_pref(user_id, args) is -1:
             abort(http_status_code=500, error_code=error_enum.database_error_updating)
         return None, 204
+
+
+class UserConnectionsController(Resource):
+    user_args_connections = {
+        'connections': fields.List(fields.Str())
+    }
+
+    def get(self, user_id):
+        return {'connections': User.get_user_connections(user_id)}
+
+    @use_args(user_args_connections)
+    def post(self, args, user_id):
+        contacts = []
+        for contact in args['connections']:
+            if Util.is_valid_contact_number(contact):
+                contacts.append(Util.clean_contact_number(contact))
+        User.set_user_connections(user_id, contacts)
+        return None, 202
