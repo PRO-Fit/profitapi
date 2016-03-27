@@ -26,3 +26,7 @@ CAL_CONFIG = {
 MAIL_GUN = {
     'KEY': 'pubkey-f7b4a94467c20f067b253337b5d06023'
 }
+
+GMAIL_API = {
+    'KEY': 'AIzaSyBmqCFXjVukY_h_DwguQr8_N1M8sVviDBw'
+}
