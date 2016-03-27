@@ -69,7 +69,6 @@ class Goal(object):
 
         user_goal_details['modified_datetime'] = Util.get_current_time()
         user_goal_details['goal_id'] = int(goal_id)
-        print query % user_goal_details
         return Db.execute_update_query(query, user_goal_details)
 
     @staticmethod

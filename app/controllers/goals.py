@@ -34,7 +34,7 @@ class GoalController(Resource):
             abort(http_status_code=500, error_code=error_enum.database_error_inserting)
         elif success is -2:
             abort(http_status_code=400, error_code=error_enum.goal_overlap)
-        return None, 204
+        return None, 201
 
     def delete(self, user_id, goal_id):
         if not goal_id:

@@ -3,5 +3,6 @@ tokens = [
     'user_id_not_found',
     'user_id_duplicate',
     'goal_id_missing',
-    'goal_overlap'
+    'goal_overlap',
+    'contact_number_invalid'
 ]
