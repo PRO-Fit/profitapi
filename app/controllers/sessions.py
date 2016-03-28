@@ -7,7 +7,7 @@ from app.models.sessions import SessionModel
 
 
 class UserSessionController(Resource):
-    
+
       session_args_post = {
         'user_id': fields.Str(required=True),
         'workout_type_id': fields.Str(required=True),
@@ -18,16 +18,16 @@ class UserSessionController(Resource):
       }
 
       # This should get all sessions of user if session_id is not given, otherwise get detail about specific session
-      # def get(self, user_id=None, session_id=None):
-      #   if not user_id:
-      #       abort(http_status_code=404, error_code=error_enum.user_id_missing)
-      #   result = User.get_user(user_id)
-      #   if result:
-      #       for record in result:
-      #           record['dob'] = str(record['dob'])
-      #   else:
-      #       abort(http_status_code=400, error_code=error_enum.user_id_not_found)
-      #   return result
+      def get(self, user_id=None, session_id=None):
+        if not user_id:
+            abort(http_status_code=404, error_code=error_enum.user_id_missing)
+        result = SessionModel.get_user_sessions(user_id)
+        if result:
+            for record in result:
+                record['dob'] = str(record['dob'])
+        else:
+            abort(http_status_code=400, error_code=error_enum.user_id_not_found)
+        return result
 
       @use_args(session_args_post)
       def post(self, args, user_id):

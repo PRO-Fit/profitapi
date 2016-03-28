@@ -30,7 +30,7 @@ class SessionModel(object):
 
     @staticmethod
     def _has_session_period_overlap(user_id, start_datetime, end_datetime):
-        user_active_goals = SessionModel.get_user_sessions(user_id)
+        user_active_goals = SessionModel.get_user_sessions(user_id, start=Util.get_current_datetime())
         new_start = Util.convert_string_to_datetime(start_datetime)
         new_end = Util.convert_string_to_datetime(end_datetime)
         for goal in user_active_goals:
@@ -41,5 +41,39 @@ class SessionModel(object):
         return False
 
     @staticmethod
-    def get_user_sessions(user_id):
-        return list
+    def get_user_sessions(user_id, start=None, end=None, session_id=None):
+
+        query = """SELECT
+                      id,
+                      user_id,
+                      workout_type_id,
+                      start_datetime,
+                      end_datetime,
+                      session_feedback_id,
+                      is_accepted
+                    FROM t_user_session
+                    WHERE
+                      user_id = '%(user_id)s'
+                      """
+
+        parameters = {
+            'user_id': user_id,
+        }
+
+        if session_id:
+            session_id_clause = """ AND id = %(session_id)s"""
+            query += session_id_clause
+            parameters['session_id'] = session_id
+
+        if start:
+            start_clause = """ AND start_datetime >= '%(start)s'"""
+            query += start_clause
+            parameters['start'] = start
+
+        if end:
+            end_clause = """ AND end_datetime >= '%(end)s'"""
+            query += end_clause
+            parameters['end'] = end
+
+        print query % parameters
+        return Db.execute_select_query(query, parameters)
