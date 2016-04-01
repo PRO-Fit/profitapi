@@ -4,6 +4,7 @@ from webargs.flaskparser import use_args
 from flask.ext.restful import abort
 
 from app.models.users import User
+from app.models.user_locations import UserLocation
 from app.common.errors import error_enum
 from app.common.util import Util
 
@@ -102,3 +103,15 @@ class UserConnectionsController(Resource):
                 contacts.append(Util.clean_contact_number(contact))
         User.set_user_connections(user_id, contacts)
         return None, 202
+
+
+class UserLocationController(Resource):
+    user_loc_args = {
+        'longitude': fields.Float(required=True),
+        'latitude': fields.Float(required=True)
+    }
+
+    @use_args(user_loc_args)
+    def post(self, args, user_id):
+        UserLocation.insert_user_location(user_id, args)
+        return None, 201

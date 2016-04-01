@@ -1,4 +1,5 @@
-from app.controllers.users import UserController, UserPreferenceController, UserConnectionsController
+from app.controllers.users import UserController, UserPreferenceController, UserConnectionsController, \
+    UserLocationController
 from app.controllers.goals import GoalController
 
 user_api_config = [
@@ -26,6 +27,12 @@ user_api_config = [
         'endpoint': UserConnectionsController,
         'routes': [
             '/v1/users/<user_id>/connections'
+            ]
+    },
+    {
+        'endpoint': UserLocationController,
+        'routes': [
+            '/v1/users/<user_id>/location'
             ]
     }
 ]
