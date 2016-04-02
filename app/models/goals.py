@@ -87,3 +87,7 @@ class Goal(object):
             if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                 return True
         return False
+
+    @staticmethod
+    def get_user_goals(user_id, start_date, end_date):
+        pass
