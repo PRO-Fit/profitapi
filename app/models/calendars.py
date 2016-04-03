@@ -48,3 +48,22 @@ class CalendarModel(object):
         get_user_query = """SELECT first_name, last_name, points, weight, height, dob, gender, email, contact_number,
                           injuries FROM t_user WHERE user_id = \"%s\"""" % user_id
         return Db.execute_select_query(get_user_query)
+
+
+class CalendarEventsModel(object):
+
+    @staticmethod
+    def get_secret(user_id, email_id):
+
+        query = """
+                SELECT access_token, refresh_token
+                FROM t_user_external_account
+                WHERE user_id = '%s(user_id)'
+                AND email_id = '%s(email_id)'
+              """
+        parameters = {
+            'user_id': user_id,
+            'email_id': email_id
+        }
+
+        return Db.execute_select_query(query, parameters)

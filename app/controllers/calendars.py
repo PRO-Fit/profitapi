@@ -3,13 +3,14 @@ from webargs import fields
 from webargs.flaskparser import use_args
 from flask.ext.restful import abort
 from app.common.errors import error_enum
-from app.common.config import CAL_CONFIG as config
-from app.common.config import MAIL_GUN as email_config
+from app.common.config import CAL_CONFIG as config, GMAIL_EVENTS_URL
 from app.common.temp_data import database, session
 from flask import redirect, make_response
 import requests
-from app.models.calendars import CalendarModel
+from app.models.calendars import CalendarModel, CalendarEventsModel
 import re
+import datetime
+import json
 
 
 class CalendarAuthController(Resource):
@@ -52,6 +53,37 @@ class UserCalendarController(Resource):
             return CalendarModel.get_all_emails(user_id), 200
         else:
             abort(http_status_code=400, error_code=error_enum.user_id_missing)
+
+
+class CalendarEventsController(Resource):
+
+    def get(self, args, user_id, email_id=None):
+        if user_id is None:
+            abort(http_status_code=400, error_code=error_enum.user_id_missing)
+
+        if email_id is None:
+            abort(http_status_code=400, error_code=error_enum.email_not_found)
+
+        secret = CalendarEventsModel.get_secret(user_id, email_id)
+        access_token = secret[0]['access_token']
+
+        # TODO: Must be an RFC3339 timestamp with mandatory time zone offset,
+        # e.g., 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z.
+        start_time = args.get('start_time')
+        end_time = args.get('end_time')
+
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        headers = {'Authorization': 'Bearer {}'.format(access_token)}
+        params = {'timeMin': start_time, 'timeMax': end_time, 'maxResults': 10, 'singleEvents': True,
+                  'orderBy': 'startTime'}
+        r = requests.get(GMAIL_EVENTS_URL['KEY'], headers=headers, params=params)
+        eventlist = r.json()['items']
+        events = {}
+        for event in eventlist:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            events[start] = event['summary']
+        print r.text
+        return json.dumps(events)
 
 
 class CalendarAuthRedirectController(Resource):

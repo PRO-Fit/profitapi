@@ -30,3 +30,7 @@ MAIL_GUN = {
 GMAIL_API = {
     'KEY': 'AIzaSyBmqCFXjVukY_h_DwguQr8_N1M8sVviDBw'
 }
+
+GMAIL_EVENTS_URL = {
+    'KEY': 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
+}
