@@ -9,6 +9,7 @@ from app.models.goals import Goal
 
 class GoalController(Resource):
     user_goal_args = {
+        'name': fields.Str(required=True),
         'target_burn_calories': fields.Int(missing=0),
         'target_distance': fields.Int(missing=0),
         'start_datetime': fields.Str(required=True),
