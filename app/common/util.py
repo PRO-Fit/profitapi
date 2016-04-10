@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import time
+from datetime import datetime
+import phonenumbers
 
 
 
@@ -37,3 +39,13 @@ class Util():
     @staticmethod
     def convert_string_to_time(time_str):
         return time.strptime(time_str, '%H:%M:%S')
+
+    @staticmethod
+    def is_valid_contact_number(number):
+        return phonenumbers.is_valid_number(phonenumbers.parse(str(number), 'US'))
+
+    @staticmethod
+    def clean_contact_number(number):
+        number = phonenumbers.parse(str(number), 'US')
+        return number.national_number
+
