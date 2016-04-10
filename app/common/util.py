@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
 import time
-from datetime import datetime
+
 
 
 class Util():
@@ -24,3 +25,15 @@ class Util():
                 if type(value) is datetime:
                     row[key] = str(value)
         return list_of_rows
+
+    @staticmethod
+    def convert_time_to_str(list_of_rows):
+        for row in list_of_rows:
+            for key, value in row.iteritems():
+                if type(value) is timedelta:
+                    row[key] = str(value)
+        return list_of_rows
+
+    @staticmethod
+    def convert_string_to_time(time_str):
+        return time.strptime(time_str, '%H:%M:%S')

@@ -5,5 +5,6 @@ tokens = [
     'email_verification_failed',
     'invalid_email_syntax',
     'fitness_session_overlap',
-    'session_not_found'
+    'session_not_found',
+    'invalid_session_status'
 ]

@@ -25,14 +25,15 @@ calendar_api_config = [
     {
         'endpoint': UserSessionController,
         'routes': [
-            '/v1/users/<user_id>/sessions/',
+            '/v1/users/<user_id>/sessions',
             '/v1/users/<user_id>/sessions/<session_id>',
         ]
     },
     {
         'endpoint': UserBlockedSessionController,
         'routes': [
-            '/v1/users/<user_id>/blocksessions/',
+            '/v1/users/<user_id>/blocksessions',
+            '/v1/users/<user_id>/blocksessions/days/<day>',
             '/v1/users/<user_id>/blocksessions/<session_id>',
         ]
     },

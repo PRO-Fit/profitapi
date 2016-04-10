@@ -16,12 +16,14 @@ import json
 class CalendarAuthController(Resource):
 
     @staticmethod
-    def validate_email(self, email=None):
+    def validate_email(email=None):
         REG_EX = "^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$"
         return re.match(REG_EX, str(email))
 
     def get(self, user_id=None, email=None):
         if user_id is not None and email is not None:
+            print email
+            print self.validate_email(email)
             if self.validate_email(email):
                 records = CalendarModel.check_email(email)
                 if records>0 :
@@ -41,7 +43,7 @@ class CalendarAuthController(Resource):
 
 class UserCalendarController(Resource):
 
-    def delete(self, email=None):
+    def delete(self, user_id= None, email=None):
         if email is not None:
             CalendarModel.delete_email(email)
             return None, 204
@@ -67,7 +69,7 @@ class CalendarEventsController(Resource):
         secret = CalendarEventsModel.get_secret(user_id, email_id)
         access_token = secret[0]['access_token']
 
-        # TODO: Must be an RFC3339 timestamp with mandatory time zone offset,
+        # TODO: Must be a RFC3339 timestamp with mandatory time zone offset,
         # e.g., 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z.
         start_time = args.get('start_time')
         end_time = args.get('end_time')

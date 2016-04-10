@@ -6,6 +6,8 @@
 #     'raise_on_warnings': True
 # }
 
+from collections import namedtuple
+
 DB_CONFIG = {
     'user': 'root',
     'password': 'pr0f1tadmin',
@@ -34,3 +36,13 @@ GMAIL_API = {
 GMAIL_EVENTS_URL = {
     'KEY': 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
 }
+
+SESSION_STATUS = ['USER_CREATED', 'REC_ACCEPTED', 'REC_REJECTED', 'NOT_NOTIFIED']
+
+session_status = namedtuple(
+    'SESSION_STATUS',
+    SESSION_STATUS
+)(
+    *SESSION_STATUS
+)
+

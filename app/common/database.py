@@ -61,7 +61,7 @@ class Db():
             cnx.close()
         cursor.close()
         cnx.close()
-        return Util.convert_datetime_to_str(result)
+        return result
 
     @staticmethod
     def execute_update_query(query, parameters=None):
