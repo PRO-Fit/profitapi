@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 import time
 from datetime import datetime
 import phonenumbers
+
 
 
 class Util():
@@ -19,6 +21,26 @@ class Util():
         return datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
 
     @staticmethod
+    def convert_datetime_to_str(list_of_rows):
+        for row in list_of_rows:
+            for key, value in row.iteritems():
+                if type(value) is datetime:
+                    row[key] = str(value)
+        return list_of_rows
+
+    @staticmethod
+    def convert_time_to_str(list_of_rows):
+        for row in list_of_rows:
+            for key, value in row.iteritems():
+                if type(value) is timedelta:
+                    row[key] = str(value)
+        return list_of_rows
+
+    @staticmethod
+    def convert_string_to_time(time_str):
+        return time.strptime(time_str, '%H:%M:%S')
+
+    @staticmethod
     def is_valid_contact_number(number):
         return phonenumbers.is_valid_number(phonenumbers.parse(str(number), 'US'))
 
@@ -26,3 +48,4 @@ class Util():
     def clean_contact_number(number):
         number = phonenumbers.parse(str(number), 'US')
         return number.national_number
+
