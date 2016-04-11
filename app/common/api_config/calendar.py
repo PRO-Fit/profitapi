@@ -1,4 +1,6 @@
-from app.controllers.calendars import CalendarAuthController, CalendarAuthRedirectController, CalendarController
+from app.controllers.calendars import CalendarAuthController, CalendarAuthRedirectController, UserCalendarController,\
+                                      CalendarEventsController
+from app.controllers.sessions import UserSessionController, UserBlockedSessionController
 
 calendar_api_config = [
     {
@@ -14,9 +16,31 @@ calendar_api_config = [
         ]
     },
     {
-        'endpoint': CalendarController,
+        'endpoint': UserCalendarController,
         'routes': [
-            '/v1/calendars/google/<email>'
+            '/v1/users/<user_id>/calendars/google/<email>',
+            '/v1/users/<user_id>/calendars/google'
+        ]
+    },
+    {
+        'endpoint': UserSessionController,
+        'routes': [
+            '/v1/users/<user_id>/sessions',
+            '/v1/users/<user_id>/sessions/<session_id>',
+        ]
+    },
+    {
+        'endpoint': UserBlockedSessionController,
+        'routes': [
+            '/v1/users/<user_id>/blocksessions',
+            '/v1/users/<user_id>/blocksessions/days/<day>',
+            '/v1/users/<user_id>/blocksessions/<session_id>',
+        ]
+    },
+    {
+        'endpoint': CalendarEventsController,
+        'routes': [
+            '/v1/users/<user_id>/calendars/events/<email_id>'
         ]
     }
 ]
