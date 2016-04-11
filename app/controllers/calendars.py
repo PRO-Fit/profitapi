@@ -50,9 +50,9 @@ class UserCalendarController(Resource):
         else:
             abort(http_status_code=400, error_code=error_enum.email_not_found)
 
-    def get(self, user_id = None):
+    def get(self, user_id = None, email=None):
         if user_id is not None:
-            return CalendarModel.get_all_emails(user_id), 200
+            return CalendarModel.get_all_emails(user_id,email), 200
         else:
             abort(http_status_code=400, error_code=error_enum.user_id_missing)
 
