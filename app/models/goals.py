@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.common.database import Db
 from app.common.util import Util
 
@@ -92,3 +94,15 @@ class Goal(object):
                 if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                     return True
         return False
+
+    @staticmethod
+    def get_user_goals(start_date, end_date, user_id=None):
+        if type(start_date) is datetime:
+            start_date = start_date.strftime("%Y-%m-%d")
+        if type(end_date) is datetime:
+            end_date = end_date.strftime("%Y-%m-%d")
+        query = """SELECT id, user_id, target_burn_calories, target_distance, start_datetime, end_datetime
+        FROM t_goal WHERE start_datetime BETWEEN '%s' AND '%s' ORDER BY start_datetime ASC"""
+        if user_id:
+            query += " AND user_id = %s" % user_id
+        return Db.execute_select_query(query % (start_date, end_date))
