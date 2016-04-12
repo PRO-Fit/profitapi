@@ -31,8 +31,7 @@ def calculate_calories_burnt_for_activity(bmr, activity_type_id):
     return bmr * ACTIVITY_MET.get(activity_type_by_id.get(activity_type_id, None), 1)
 
 
-def calculate_activity_calories_burnt(since_activity):
-    activities = Activity.get_activities_since_with_user_bio(since_activity)
+def calculate_activity_calories_burnt(activities):
     for activity in activities:
         age = calculate_age(activity.get('dob'))
         bmr = calculate_bmr(activity.get('weight'), activity.get('weight'), age, activity.get('gender'), 5)

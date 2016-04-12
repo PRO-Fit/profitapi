@@ -102,7 +102,17 @@ class Goal(object):
         if type(end_date) is datetime:
             end_date = end_date.strftime("%Y-%m-%d")
         query = """SELECT id, user_id, target_burn_calories, target_distance, start_datetime, end_datetime
-        FROM t_goal WHERE start_datetime BETWEEN '%s' AND '%s' ORDER BY start_datetime ASC"""
+                    FROM t_goal WHERE start_datetime BETWEEN '%(start_date)s' AND '%(end_date)s' %(user_id_query)s
+                    UNION
+                    SELECT id, user_id, target_burn_calories, target_distance, start_datetime, end_datetime
+                    FROM t_goal WHERE end_datetime BETWEEN '%(start_date)s' AND '%(end_date)s' %(user_id_query)s
+                    ORDER BY start_datetime ASC"""
+        user_id_query = ""
         if user_id:
-            query += " AND user_id = %s" % user_id
-        return Db.execute_select_query(query % (start_date, end_date))
+            user_id_query = " AND user_id = '%s'" % user_id
+        params = {
+            'start_date': start_date,
+            'end_date': end_date,
+            'user_id_query': user_id_query
+        }
+        return Db.execute_select_query(query % params)

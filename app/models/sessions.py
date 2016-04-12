@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from app.common.database import Db
 from app.common.util import Util
+from app.common.config import session_status
 
 
 class SessionModel(object):
@@ -34,7 +37,7 @@ class SessionModel(object):
         return Db.execute_insert_query(query, session_details)
 
     @staticmethod
-    def _has_session_period_overlap(user_id, start_datetime, end_datetime,session_id = None):
+    def _has_session_period_overlap(user_id, start_datetime, end_datetime, session_id = None):
         user_sessions = SessionModel.get_user_sessions(user_id, start=Util.get_current_datetime())
         print user_sessions
         print session_id
@@ -128,12 +131,38 @@ class SessionModel(object):
         session_details['modified_datetime'] = Util.get_current_time()
         return Db.execute_update_query(query, session_details)
 
+    @staticmethod
+    def get_user_sessions(start_time, end_time, user_id=None):
+        if type(start_time) is datetime:
+            start_time = start_time.strftime("%Y-%m-%d %H:%M:%S")
+        if type(end_time) is datetime:
+            end_time = end_time.strftime("%Y-%m-%d %H:%M:%S")
+        query = """SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
+                    FROM t_user_session WHERE start_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    AND session_status IN ('%(session_status)s') %(user_id_query)s
+                    UNION
+                    SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
+                    FROM t_user_session WHERE end_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    AND session_status IN ('%(session_status)s') %(user_id_query)s
+                    ORDER BY start_datetime ASC"""
+        user_id_query = ""
+        if user_id:
+            user_id_query = " AND user_id = '%s'" % user_id
+        sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED]
+        params = {
+            'start_time': start_time,
+            'end_time': end_time,
+            'session_status': "','".join(sessions),
+            'user_id_query': user_id_query
+        }
+        return Db.execute_select_query(query % params)
+
 
 class BlockSessionModel(object):
 
     @staticmethod
     def create_block_session(user_id, session_details):
-        result_row = 0;
+        result_row = 0
         days = []
         if session_details['day_of_week'] == 'All':
             days.extend(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
@@ -201,24 +230,23 @@ class BlockSessionModel(object):
 
     @staticmethod
     def update_block_session(user_id, session_id, session_details):
-         if BlockSessionModel._has_session_period_overlap(user_id, session_details['start_time'],
-                                    session_details['end_time'], session_details['day_of_week'], session_id):
+        if BlockSessionModel._has_session_period_overlap(user_id, session_details['start_time'],
+                                session_details['end_time'], session_details['day_of_week'], session_id):
             return -2
-         query = """
-                 UPDATE t_user_blocked_session
-                   SET
-                   start_time = '%(start_time)s',
-                   end_time = '%(end_time)s',
-                   day_of_week = '%(day_of_week)s',
-                   modified_datetime = '%(modified_datetime)s'
-                   WHERE user_id = '%(user_id)s' AND id = '%(session_id)s'
-                   """
+        query = """
+             UPDATE t_user_blocked_session
+               SET
+               start_time = '%(start_time)s',
+               end_time = '%(end_time)s',
+               day_of_week = '%(day_of_week)s',
+               modified_datetime = '%(modified_datetime)s'
+               WHERE user_id = '%(user_id)s' AND id = '%(session_id)s'
+               """
 
-         session_details['session_id'] = session_id
-         session_details['user_id'] = user_id
-         session_details['modified_datetime'] = Util.get_current_time()
-
-         return Db.execute_update_query(query, session_details)
+        session_details['session_id'] = session_id
+        session_details['user_id'] = user_id
+        session_details['modified_datetime'] = Util.get_current_time()
+        return Db.execute_update_query(query, session_details)
 
     @staticmethod
     def delete_block_session(user_id, session_id):
@@ -252,4 +280,3 @@ class BlockSessionModel(object):
             if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                 return True
         return False
-
