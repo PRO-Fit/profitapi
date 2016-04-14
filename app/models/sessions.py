@@ -34,7 +34,7 @@ class SessionModel(object):
         return Db.execute_insert_query(query, session_details)
 
     @staticmethod
-    def _has_session_period_overlap(user_id, start_datetime, end_datetime,session_id = None):
+    def _has_session_period_overlap(user_id, start_datetime, end_datetime,session_id=None):
         user_sessions = SessionModel.get_user_sessions(user_id, start=Util.get_current_datetime())
         print user_sessions
         print session_id
