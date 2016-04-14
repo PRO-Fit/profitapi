@@ -132,7 +132,7 @@ class SessionModel(object):
         return Db.execute_update_query(query, session_details)
 
     @staticmethod
-    def get_user_sessions(start_time, end_time, user_id=None):
+    def get_user_sessions_in_duration(start_time, end_time, user_id=None):
         if type(start_time) is datetime:
             start_time = start_time.strftime("%Y-%m-%d %H:%M:%S")
         if type(end_time) is datetime:

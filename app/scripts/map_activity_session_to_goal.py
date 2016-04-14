@@ -71,7 +71,7 @@ def main():
         first_activity_time = get_datetime_from_activity_timestamp(activities[0].get('start_datetime'))
         last_activity_time = get_datetime_from_activity_timestamp(activities[len(activities)-1].get('start_datetime'))
         goals = get_items_by_user_id(Goal.get_user_goals(first_activity_time, last_activity_time))
-        sessions = get_items_by_user_id(SessionModel.get_user_sessions(first_activity_time, last_activity_time))
+        sessions = get_items_by_user_id(SessionModel.get_user_sessions_in_duration(first_activity_time, last_activity_time))
         goal_activities = []
         for activity in activities:
             goal_activities.append(
