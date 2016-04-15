@@ -16,7 +16,7 @@ class Db():
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 logging.log(logging.DEBUG, "Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                logging.log(logging.DEBUG,"Database does not exist")
+                logging.log(logging.DEBUG, "Database does not exist")
             else:
                 print(err)
         else:

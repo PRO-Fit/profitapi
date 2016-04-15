@@ -39,8 +39,6 @@ class SessionModel(object):
     @staticmethod
     def _has_session_period_overlap(user_id, start_datetime, end_datetime, session_id = None):
         user_sessions = SessionModel.get_user_sessions(user_id, start=Util.get_current_datetime())
-        print user_sessions
-        print session_id
         new_start = Util.convert_string_to_datetime(start_datetime)
         new_end = Util.convert_string_to_datetime(end_datetime)
         for session in user_sessions:
@@ -88,7 +86,6 @@ class SessionModel(object):
             query += end_clause
             parameters['end'] = str(end)
 
-        print query % parameters
         return Util.convert_datetime_to_str(Db.execute_select_query(query, parameters))
 
     @staticmethod
@@ -266,17 +263,14 @@ class BlockSessionModel(object):
     @staticmethod
     def _has_session_period_overlap(user_id, start_time, end_time, day_of_week, session_id=None):
         sessions = BlockSessionModel.get_block_session(user_id, day_of_week)
-        print sessions
         new_start = Util.convert_string_to_time(start_time)
         new_end = Util.convert_string_to_time(end_time)
-        print type(new_end)
         for session in sessions:
             if session_id:
                 if int(session_id) == session.get('id'):
                     continue
             start = Util.convert_string_to_time(session.get('start_time'))
             end = Util.convert_string_to_time(session.get('end_time'))
-            print type(end)
             if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                 return True
         return False
