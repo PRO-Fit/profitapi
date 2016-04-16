@@ -33,7 +33,7 @@ class UserSessionController(Resource):
             start = args.get('start_date')
             end = args.get('end_date')
 
-        result = SessionModel.get_user_sessions(user_id, start, end, session_id = session_id)
+        result = SessionModel.get_user_sessions(user_id, start, end, session_id=session_id)
         return result
         return None, 200
 

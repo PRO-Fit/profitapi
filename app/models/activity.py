@@ -15,7 +15,8 @@ class Activity(object):
 
     @staticmethod
     def get_activities_since_with_user_bio(activity_id):
-        query = """SELECT tau.id, tau.user_id, tau.workout_type_id, distance, tu.weight, tu.height, tu.dob
+        query = """SELECT tau.id, tau.user_id, tau.workout_type_id, distance, tu.weight, tu.height, tu.dob,
+                    tau.start_datetime, tau.end_datetime
                     FROM t_user_activity tau
                     INNER JOIN t_user tu ON (tau.user_id = tu.user_id)
                     WHERE tau.id > %s
@@ -28,3 +29,9 @@ class Activity(object):
                     calories_burnt = %s
                    WHERE id = %s"""
         return Db.execute_update_query(query % (calories_burnt, activity_id))
+
+    @staticmethod
+    def insert_goal_session_activity_mapping(goal_activities):
+        query = """ INSERT INTO t_goal_activity (user_id, goal_id, activity_id, session_id)
+                    VALUES""" + ",".join(goal_activities)
+        return Db.execute_insert_query(query)
