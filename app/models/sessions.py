@@ -170,10 +170,6 @@ class SessionModel(object):
         # get all accounts
         accounts = CalendarModel.get_all_accounts_detail(user_id)
 
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "All accounts:"
-        print accounts
-
         # stores all event from all google accounts for start_date to end_date
         events_from_google = []
 
@@ -182,10 +178,6 @@ class SessionModel(object):
             list_of_events = CalendarEventsModel.get_events_from_google(user_id, account['email'], str(start_date),
                                                                         str(end_date))
             events_from_google = events_from_google + list_of_events
-
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "events from google:"
-        print events_from_google
 
         # get list of dates between start and end
         start_date = Util.convert_string_to_datetime(str(start_date))
@@ -199,9 +191,6 @@ class SessionModel(object):
             print new_day.day
             list_of_dateobject.append(new_day)
 
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "list of date objects:"
-        print list_of_dateobject
         # get all block_session for user
         block_sessions = BlockSessionModel.get_block_session(user_id)
 
@@ -210,8 +199,7 @@ class SessionModel(object):
         }
 
         for block_session in block_sessions:
-            # tmp_session = {'start': Util.convert_string_to_time(block_session['start_time']),
-            #                'end': Util.convert_string_to_time(block_session['end_time'])}
+
             time_slot = TimeSlot(Util.convert_string_to_time(block_session['start_time']),
                                  Util.convert_string_to_time(block_session['end_time']))
 
@@ -223,10 +211,6 @@ class SessionModel(object):
                 temp_list = block_sessions_for_day.get(block_session['day_of_week'])
             temp_list.append(time_slot)
 
-        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "block sessions per day"
-        print block_sessions_for_day
-
         # populate blocked sessions in list_of_dateObject
         for date_object in list_of_dateobject:
             date_object.block_sessions = block_sessions_for_day.get(date_object.day)
@@ -236,8 +220,6 @@ class SessionModel(object):
             date = date_object.date
             for session in events_from_google:
                 if session['date'] == str(date)[:10]:
-                    # tmp_session = {'start': Util.convert_string_to_datetime(session['start_datetime']).time(),
-                    #                'end': Util.convert_string_to_datetime(session['end_datetime']).time()}
 
                     time_slot = TimeSlot(Util.convert_string_to_time(session['start_datetime'][11:]),
                                  Util.convert_string_to_time(session['end_datetime'][11:]))
