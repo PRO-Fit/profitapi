@@ -40,6 +40,14 @@ class CalendarModel(object):
         return Util.convert_datetime_to_str(Db.execute_select_query(get_email_query))
 
     @staticmethod
+    def get_all_accounts_detail(user_id):
+        query = """
+                SELECT *
+                FROM profit.t_user_external_account WHERE user_id =  \"%s\"""" %user_id
+
+        return Db.execute_select_query(query)
+
+    @staticmethod
     def insert_user_activity_pref(user_id, preference):
         query = """INSERT INTO t_user_activity_preference (workout_type_id, preference_priority, user_id) VALUES (
                   %s, %s, %s)"""
@@ -98,15 +106,12 @@ class CalendarEventsModel(object):
     def get_events_from_google(user_id, email_id, start_date, end_date):
 
         secret = CalendarEventsModel.get_secret(user_id, email_id)
-        print secret
         access_token = secret[0]['access_token']
 
         # TODO: Must be a RFC3339 timestamp with mandatory time zone offset,
         # e.g., 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z.
         start_time = Util.convert_string_to_datetime(start_date).isoformat() + 'Z'
         end_time = Util.convert_string_to_datetime(end_date).isoformat() + 'Z'
-        print start_time
-        print end_time
 
         headers = {'Authorization': 'Bearer {}'.format(access_token)}
         params = {'timeMin': start_time, 'timeMax': end_time, 'maxResults': 10, 'singleEvents': True,
@@ -124,13 +129,10 @@ class CalendarEventsModel(object):
             }
 
             new_token = requests.post(GMAIL_EVENTS_URLS['ACCESS_TOKEN'], headers=head, params=data)
-            print "new token - "+new_token.text
             new_secret = new_token.json()['access_token']
             CalendarEventsModel.store_new_secret(user_id,email_id,new_secret)
 
             headers = {'Authorization': 'Bearer {}'.format(new_secret)}
-            print headers
-            print params
             r = requests.get(GMAIL_EVENTS_URLS['EVENTS'], headers=headers, params=params)
             eventlist = r.json()['items']
             events = []
@@ -139,9 +141,10 @@ class CalendarEventsModel(object):
                 session['start_datetime'] = str(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))[:19]
                 session['end_datetime'] = str(iso8601.parse_date(event['end'].get('dateTime', event['end'].get('date'))))[:19]
                 session['summary'] = event['summary']
-                session['day'] = CalendarEventsModel.get_weekday(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))
+                session['email'] = email_id
+                session['date'] = session['start_datetime'][:10]
+                session['day'] = Util.get_weekday(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))
                 events.append(session)
-            print r.text
             return events
         eventlist = r.json()['items']
         events = []
@@ -150,13 +153,14 @@ class CalendarEventsModel(object):
             session['start_datetime'] = str(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))[:19]
             session['end_datetime'] = str(iso8601.parse_date(event['end'].get('dateTime', event['end'].get('date'))))[:19]
             session['summary'] = event['summary']
-            session['day'] = CalendarEventsModel.get_weekday(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))
+            session['email'] = email_id
+            session['date'] = session['start_datetime'][:10]
+            session['day'] = Util.get_weekday(iso8601.parse_date(event['start'].get('dateTime', event['start'].get('date'))))
             events.append(session)
-        print r.text
         return events
 
-    @staticmethod
-    def get_weekday(date):
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        dayNumber = date.weekday()
-        return days[dayNumber]
+    # @staticmethod
+    # def get_weekday(date):
+    #     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    #     dayNumber = date.weekday()
+    #     return days[dayNumber]

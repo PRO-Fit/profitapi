@@ -1,8 +1,11 @@
 from datetime import datetime
+import datetime as dtime
 
 from app.common.database import Db
 from app.common.util import Util
 from app.common.config import session_status
+from app.models.calendars import CalendarModel, CalendarEventsModel
+import time
 
 
 class SessionModel(object):
@@ -154,6 +157,120 @@ class SessionModel(object):
         }
         return Db.execute_select_query(query % params)
 
+    @staticmethod
+    def get_free_slots(user_id, start_date, end_date=None):
+        if user_id is None:
+            raise Exception('user_id can not be null')
+        if start_date is None:
+            raise Exception('start_date not provided')
+        if end_date is None:
+            start = Util.convert_string_to_datetime(start_date)
+            end_date = str(start + dtime.timedelta(days=1))
+
+        # get all accounts
+        accounts = CalendarModel.get_all_accounts_detail(user_id)
+
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "All accounts:"
+        print accounts
+
+        # stores all event from all google accounts for start_date to end_date
+        events_from_google = []
+
+        # get all events from all google accounts
+        for account in accounts:
+            list_of_events = CalendarEventsModel.get_events_from_google(user_id, account['email'], str(start_date),
+                                                                        str(end_date))
+            events_from_google = events_from_google + list_of_events
+
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "events from google:"
+        print events_from_google
+
+        # get list of dates between start and end
+        start_date = Util.convert_string_to_datetime(str(start_date))
+        end_date = Util.convert_string_to_datetime(str(end_date))
+
+        dates = Util.daterange(start_date, end_date)
+        list_of_dateobject = []
+        for day in dates:
+            new_day = DateObject(day)
+            new_day.day = Util.get_weekday(day)
+            print new_day.day
+            list_of_dateobject.append(new_day)
+
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "list of date objects:"
+        print list_of_dateobject
+        # get all block_session for user
+        block_sessions = BlockSessionModel.get_block_session(user_id)
+
+        # club all block sessions day wise
+        block_sessions_for_day = {
+        }
+
+        for block_session in block_sessions:
+            # tmp_session = {'start': Util.convert_string_to_time(block_session['start_time']),
+            #                'end': Util.convert_string_to_time(block_session['end_time'])}
+            time_slot = TimeSlot(Util.convert_string_to_time(block_session['start_time']),
+                                 Util.convert_string_to_time(block_session['end_time']))
+
+            if block_sessions_for_day.get(block_session['day_of_week']) is None:
+                block_sessions_for_day[block_session['day_of_week']] = []
+                temp_list = block_sessions_for_day[block_session['day_of_week']]
+
+            else:
+                temp_list = block_sessions_for_day.get(block_session['day_of_week'])
+            temp_list.append(time_slot)
+
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "block sessions per day"
+        print block_sessions_for_day
+
+        # populate blocked sessions in list_of_dateObject
+        for date_object in list_of_dateobject:
+            date_object.block_sessions = block_sessions_for_day.get(date_object.day)
+
+        # populate events from google in list_of_dateObject
+        for date_object in list_of_dateobject:
+            date = date_object.date
+            for session in events_from_google:
+                if session['date'] == str(date)[:10]:
+                    # tmp_session = {'start': Util.convert_string_to_datetime(session['start_datetime']).time(),
+                    #                'end': Util.convert_string_to_datetime(session['end_datetime']).time()}
+
+                    time_slot = TimeSlot(Util.convert_string_to_time(session['start_datetime'][11:]),
+                                 Util.convert_string_to_time(session['end_datetime'][11:]))
+                    date_object.google_events.append(time_slot)
+
+        # calculate free slots for each object in list_of_dateObject
+        for date_object in list_of_dateobject:
+            all_sessions = date_object.block_sessions + date_object.google_events
+
+            # sort all_sessions to get free slots
+            all_sessions.sort(key=lambda r: r.start)
+            for x, y in zip(all_sessions, all_sessions[1:]):
+                if x.end < y.start:
+                    start = x.end
+                    end = y.start
+                    date_object.free_slots.append({"start": time.strftime('%H:%M:%S', start),
+                                                   "end": time.strftime('%H:%M:%S', end)})
+
+            # if first reserved slot is not starting with mid-night then add delta in free slots
+            if all_sessions[0].start > Util.convert_string_to_time("00:00:00"):
+                date_object.free_slots.append({"start": "00:00:00", "end": time.strftime('%H:%M:%S', all_sessions[0].start)})
+
+            # if last reserved slot is not ending at mid-night then add delta in free slots
+            if all_sessions[-1].end < Util.convert_string_to_time("23:59:59"):
+                date_object.free_slots.append({"start": time.strftime('%H:%M:%S', all_sessions[-1].end), "end": "23:59:59"})
+
+        # return result from list_of_dateObject
+        result = {}
+        for date_object in list_of_dateobject:
+            result[str(date_object.date)] = date_object.free_slots
+
+        return result
+
 
 class BlockSessionModel(object):
 
@@ -274,3 +391,29 @@ class BlockSessionModel(object):
             if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
                 return True
         return False
+
+
+class DateObject(object):
+    """common date object to store google events, block sessions and free slots"""
+
+    def __init__(self, date):
+        self.date = date
+        self.day = None
+        self.google_events = []
+        self.block_sessions = None
+        self.free_slots = []
+
+    def __str__(self):
+        return "" + self.date + " ~ " + self.day + " ~ " + self.block_sessions + " ~ " +\
+                self.google_events + " ~ " + self.free_slots
+
+
+class TimeSlot(object):
+    """object to store start and end time of slot """
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def __str__(self):
+        return "" + self.start + " ~ " + self.end
