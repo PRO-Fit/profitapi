@@ -33,8 +33,9 @@ GMAIL_API = {
     'KEY': 'AIzaSyBmqCFXjVukY_h_DwguQr8_N1M8sVviDBw'
 }
 
-GMAIL_EVENTS_URL = {
-    'KEY': 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
+GMAIL_EVENTS_URLS = {
+    'EVENTS': 'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+    'ACCESS_TOKEN': 'https://www.googleapis.com/oauth2/v4/token'
 }
 
 SESSION_STATUS = ['USER_CREATED', 'REC_ACCEPTED', 'REC_REJECTED', 'NOT_NOTIFIED']

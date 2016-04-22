@@ -1,9 +1,9 @@
-from flask.ext.restful import Resource
+from flask.ext.restful import Resource, request
 from webargs import fields
 from webargs.flaskparser import use_args
 from flask.ext.restful import abort
 from app.common.errors import error_enum
-from app.common.config import CAL_CONFIG as config, GMAIL_EVENTS_URL
+from app.common.config import CAL_CONFIG , GMAIL_EVENTS_URLS
 from app.common.temp_data import database, session
 from flask import redirect, make_response
 import requests
@@ -11,6 +11,7 @@ from app.models.calendars import CalendarModel, CalendarEventsModel
 import re
 import datetime
 import json
+from app.common.util import Util
 
 
 class CalendarAuthController(Resource):
@@ -33,7 +34,7 @@ class CalendarAuthController(Resource):
                     database[user_id] = {}
                     auth_uri = ('https://accounts.google.com/o/oauth2/v2/auth?response_type=code'
                                 '&client_id={}&redirect_uri={}&scope={}&login_hint={}&access_type=offline')\
-                                .format(config['CLIENT_ID'], config['REDIRECT_URI'], config['SCOPE'], email)
+                                .format(CAL_CONFIG['CLIENT_ID'], CAL_CONFIG['REDIRECT_URI'], CAL_CONFIG['SCOPE'], email)
                     return redirect(auth_uri)
             else:
                 abort(http_status_code=400, error_code=error_enum.invalid_email_syntax)
@@ -59,33 +60,15 @@ class UserCalendarController(Resource):
 
 class CalendarEventsController(Resource):
 
-    def get(self, args, user_id, email_id=None):
+    def get(self, user_id, email_id=None):
+        args = request.args
         if user_id is None:
             abort(http_status_code=400, error_code=error_enum.user_id_missing)
 
         if email_id is None:
             abort(http_status_code=400, error_code=error_enum.email_not_found)
-
-        secret = CalendarEventsModel.get_secret(user_id, email_id)
-        access_token = secret[0]['access_token']
-
-        # TODO: Must be a RFC3339 timestamp with mandatory time zone offset,
-        # e.g., 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z.
-        start_time = args.get('start_time')
-        end_time = args.get('end_time')
-
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        headers = {'Authorization': 'Bearer {}'.format(access_token)}
-        params = {'timeMin': start_time, 'timeMax': end_time, 'maxResults': 10, 'singleEvents': True,
-                  'orderBy': 'startTime'}
-        r = requests.get(GMAIL_EVENTS_URL['KEY'], headers=headers, params=params)
-        eventlist = r.json()['items']
-        events = {}
-        for event in eventlist:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            events[start] = event['summary']
-        print r.text
-        return json.dumps(events)
+        result = CalendarEventsModel.get_events_from_google(user_id, email_id, args.get('start_date'), args.get('end_date'))
+        return result, 200
 
 
 class CalendarAuthRedirectController(Resource):
@@ -99,9 +82,9 @@ class CalendarAuthRedirectController(Resource):
         auth_code = args.get('code')
 
         data = {'code': auth_code,
-                'client_id': config['CLIENT_ID'],
-                'client_secret': config['CLIENT_SECRET'],
-                'redirect_uri': config['REDIRECT_URI'],
+                'client_id': CAL_CONFIG['CLIENT_ID'],
+                'client_secret': CAL_CONFIG['CLIENT_SECRET'],
+                'redirect_uri': CAL_CONFIG['REDIRECT_URI'],
                 'grant_type': 'authorization_code'}
 
         cred = requests.post('https://www.googleapis.com/oauth2/v4/token', data=data)

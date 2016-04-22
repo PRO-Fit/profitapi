@@ -3,7 +3,6 @@ import time
 import phonenumbers
 
 
-
 class Util():
     @staticmethod
     def get_current_time():
@@ -51,3 +50,13 @@ class Util():
     @staticmethod
     def get_past_date(days_in_past=7):
         return date.today() - timedelta(days=days_in_past)
+
+    def get_weekday(date):
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        dayNumber = date.weekday()
+        return days[dayNumber]
+
+    @staticmethod
+    def daterange(start_date, end_date):
+        for n in range(int ((end_date - start_date).days)):
+            yield start_date + timedelta(n)
