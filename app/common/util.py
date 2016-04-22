@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import time
-from datetime import datetime
 import phonenumbers
 
 
@@ -49,3 +48,6 @@ class Util():
         number = phonenumbers.parse(str(number), 'US')
         return number.national_number
 
+    @staticmethod
+    def get_past_date(days_in_past=7):
+        return date.today() - timedelta(days=days_in_past)

@@ -13,27 +13,41 @@ ACTIVITY_MET = {
     'down': 3,
 }
 
+activity_types = Activity.get_activity_type()
+activity_type_by_id = {v: k for k, v in activity_types.items()}
 
-def calculate_age(dob):
-    return relativedelta(Util.get_current_datetime(), dob).years
 
+class CaloriesUtil(object):
+    @staticmethod
+    def calculate_age(dob):
+        return relativedelta(Util.get_current_datetime(), dob).years
 
-def calculate_bmr(weight, height, age, gender, duration_in_seconds):
-    if gender is 'Male':
-        return (((13.397 * weight) + (4.799 * height) - (5.677 * age) + 88.362) * duration_in_seconds) / (24 * 60 * 60)
-    else:
-        return (((9.247 * weight) + (3.098 * height) - (4.330 * age) + 447.593) * duration_in_seconds) / (24 * 60 * 60)
+    @staticmethod
+    def calculate_bmr(weight, height, age, gender, duration_in_seconds):
+        if gender is 'Male':
+            return (((13.397 * weight) + (4.799 * height) - (5.677 * age) + 88.362) * duration_in_seconds) / (24 * 60 * 60)
+        else:
+            return (((9.247 * weight) + (3.098 * height) - (4.330 * age) + 447.593) * duration_in_seconds) / (24 * 60 * 60)
+
+    @staticmethod
+    def get_time_in_minutes_for_bmr(weight, height, age, gender):
+        if gender is 'Male':
+            return (24 * 60) / ((13.397 * weight) + (4.799 * height) - (5.677 * age) + 88.362)
+        else:
+            return (24 * 60) / ((9.247 * weight) + (3.098 * height) - (4.330 * age) + 447.593)
+
+    @staticmethod
+    def get_time_in_minutes_to_burn_calories(calories, activity, weight, height, age, gender):
+        return calories * CaloriesUtil.get_time_in_minutes_for_bmr(weight, height, age, gender) * ACTIVITY_MET.get(activity)
 
 
 def calculate_calories_burnt_for_activity(bmr, activity_type_id):
-    activity_types = Activity.get_activity_type()
-    activity_type_by_id = {v: k for k, v in activity_types.items()}
     return bmr * ACTIVITY_MET.get(activity_type_by_id.get(activity_type_id, None), 1)
 
 
 def calculate_activity_calories_burnt(activities):
     for activity in activities:
-        age = calculate_age(activity.get('dob'))
-        bmr = calculate_bmr(activity.get('weight'), activity.get('weight'), age, activity.get('gender'), 5)
+        age = CaloriesUtil.calculate_age(activity.get('dob'))
+        bmr = CaloriesUtil.calculate_bmr(activity.get('weight'), activity.get('weight'), age, activity.get('gender'), 5)
         calories = calculate_calories_burnt_for_activity(bmr, activity.get('workout_type_id'))
         Activity.update_activity_calories_burnt(activity.get('id'), calories)
