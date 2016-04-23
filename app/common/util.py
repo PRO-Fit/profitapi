@@ -49,3 +49,13 @@ class Util():
         number = phonenumbers.parse(str(number), 'US')
         return number.national_number
 
+    @staticmethod
+    def get_weekday(date):
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        dayNumber = date.weekday()
+        return days[dayNumber]
+
+    @staticmethod
+    def daterange(start_date, end_date):
+        for n in range(int ((end_date - start_date).days)):
+            yield start_date + timedelta(n)

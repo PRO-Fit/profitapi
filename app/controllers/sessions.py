@@ -33,7 +33,7 @@ class UserSessionController(Resource):
             start = args.get('start_date')
             end = args.get('end_date')
 
-        result = SessionModel.get_user_sessions(user_id, start, end, session_id = session_id)
+        result = SessionModel.get_user_sessions(user_id, start, end, session_id=session_id)
         return result
         return None, 200
 
@@ -139,3 +139,16 @@ class UserBlockedSessionController(Resource):
            elif success is -2:
                 abort(http_status_code=400, error_code=error_enum.fitness_session_overlap)
            return None, 201
+
+class FreeSlotsController(Resource):
+
+      def get(self, user_id):
+          args = request.args
+
+          if not user_id:
+                abort(http_status_code=400, error_code=error_enum.user_id_missing)
+
+          start = args.get('start')
+          end = args.get('end')
+
+          return SessionModel.get_free_slots(user_id, start, end)
