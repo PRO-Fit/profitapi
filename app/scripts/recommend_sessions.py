@@ -1,13 +1,17 @@
 import operator
+import copy
 from datetime import date
-
+from datetime import datetime, timedelta
 from app.common.database import Db
 from app.common.util import Util
 from app.models.goals import Goal
+from app.models.sessions import SessionModel
+from app.scripts.calculate_activity_calories_burnt import CaloriesUtil
 
-TIME_SLOTS = Db.execute_select_query("SELECT * FROM t_time_slots_to_recommend ")
+TIME_SLOTS = Db.execute_select_query("SELECT * FROM t_time_slots_to_recommend ORDER BY popularity ASC")
 TIME_SLOTS_BY_ID = {slot['id']: slot for slot in TIME_SLOTS}
 
+DAYS_TO_RECOMMEND = 15
 
 def get_user_session_count_by_start_end_time():
     #TODO: Add date range condition
@@ -35,17 +39,28 @@ def get_calories_burnt_for_top_slots(user_id, slot_ids):
 
 def get_required_calories_per_day_for_goals(goal_ids):
     query = """SELECT
-                goal_id,
+                tg.id,
                 CASE
-                    WHEN tg.start_datetime <= CURRENT_DATE THEN ABS(TRUNCATE((target_burn_calories - SUM(calories_burnt))/DATEDIFF(tg.end_datetime, CURRENT_DATE),2))
-                    ELSE ABS(TRUNCATE((target_burn_calories - SUM(calories_burnt))/DATEDIFF(tg.end_datetime, tg.start_datetime),2))
+                    WHEN tg.start_datetime <= CURRENT_DATE THEN ABS(TRUNCATE((target_burn_calories - gc.calories_burnt)/DATEDIFF(tg.end_datetime, CURRENT_DATE),2))
+                    ELSE ABS(TRUNCATE((target_burn_calories - gc.calories_burnt)/DATEDIFF(tg.end_datetime, tg.start_datetime),2))
                 END as cal_per_day
-                FROM t_goal tg, t_goal_activity tga, t_user_activity ta
-                WHERE tg.id = tga.goal_id AND tga.activity_id = ta.id
-                AND tg.id IN (%s)
-                GROUP BY goal_id"""
-    print query % ",".join(map(str, goal_ids))
-    return {goal.get('goal_id'): goal.get('cal_per_day') for goal in Db.execute_select_query(query % ",".join(map(str, goal_ids)))}
+                FROM t_goal tg
+                INNER JOIN
+                (
+                    SELECT tg.id,
+                    CASE
+                        WHEN SUM(calories_burnt) IS NULL THEN 0
+                        ELSE SUM(calories_burnt)
+                    END as calories_burnt
+                    FROM t_goal tg
+                    LEFT JOIN t_goal_activity tga ON tg.id = tga.goal_id
+                    LEFT JOIN t_user_activity ta ON tga.activity_id = ta.id
+                    WHERE tg.id IN (%s)
+                    GROUP BY tg.id
+                ) gc
+                ON tg.id = gc.id
+    """
+    return {goal.get('id'): goal.get('cal_per_day') for goal in Db.execute_select_query(query % ",".join(map(str, goal_ids)))}
 
 
 def get_time_slot_for_session(user_session):
@@ -97,45 +112,94 @@ def get_top_time_slots_for_users():
             user_slots[slot] = {
                 'session_count': user_slots[slot],
                 'calories': calories_for_slots.get(slot, 0),
-                'start_time': TIME_SLOTS_BY_ID[slot].get('start_time'),
-                'end_time': TIME_SLOTS_BY_ID[slot].get('end_time'),
+                'start': str(TIME_SLOTS_BY_ID[slot].get('start_time')),
+                'end': str(TIME_SLOTS_BY_ID[slot].get('end_time')),
             }
         user_slot_list = user_slots.items()
         user_slot_list.sort(key=lambda (k, d): (d['calories'], d['session_count'],), reverse=True)
+        for id, dict in user_slot_list:
+            dict.pop('calories')
+            dict.pop('session_count')
         top_slots_by_user[user] = user_slot_list
-    # FORMAT = {'user_id': [(slot_id, {dict(session_count, calories, start_time, end_time)})]
+    # FORMAT = {'user_id': [(slot_id: {dict(session_count, calories, start_time, end_time))]
     return top_slots_by_user
 
 
-def get_user_details(user_ids):
-    get_user_query = """SELECT weight, height, dob, gender, user_id FROM t_user WHERE user_id IN (%s)""" % ",".join(map(str, user_ids))
+def get_user_details_by_user_id(user_ids):
+    get_user_query = """SELECT DISTINCT weight, height, dob, gender, user_id FROM t_user WHERE user_id IN ('%s')""" % "', '".join(map(str, user_ids))
     return {user['user_id']: user for user in Db.execute_select_query(get_user_query)}
 
 
-def get_required_minutes_for_workout(goals):
+def get_required_minutes_for_workout_per_day_by_goal():
+    goals = Goal.get_user_goals(date.today(), Util.get_future_date(DAYS_TO_RECOMMEND))
     goal_ids = [goal['id'] for goal in goals]
-    required_calories_per_goal = get_required_calories_per_day_for_goals(goal_ids)
-    user_details = get_user_details([goal['user_id'] for goal in goals])
-    print required_calories_per_goal
-    print user_details
+    reqd_calories_per_day_by_goal_id = get_required_calories_per_day_for_goals(goal_ids)
+    users_by_user_id = get_user_details_by_user_id([goal['user_id'] for goal in goals])
+    reqd_minutes_per_day_by_goal_id = dict()
+    for goal in goals:
+        user = users_by_user_id[goal['user_id']]
+        duration = CaloriesUtil.get_time_in_minutes_to_burn_calories(
+            reqd_calories_per_day_by_goal_id[goal['id']],
+            user['weight'],
+            user['height'],
+            CaloriesUtil.calculate_age(user['dob']),
+            user['gender']
+        )
+        reqd_minutes_per_day_by_goal_id[str(goal['id'])] = {
+            'user_id': user['user_id'],
+            'duration': duration,
+            'start_date': goal['start_datetime'] if goal['start_datetime'] > Util.get_current_datetime() else
+            Util.get_current_datetime(),
+            'end_date': goal['end_datetime'] if goal['end_datetime'] < Util.get_future_date(DAYS_TO_RECOMMEND) else Util.get_future_date(15)
+        }
+    return reqd_minutes_per_day_by_goal_id
 
 
-def get_goals_by_user_with_required_calories_per_day():
-    goals = Goal.get_user_goals(date.today(), Util.get_past_date(15))
-    goal_ids = [goal['id'] for goal in goals]
-    if goal_ids:
-        required_calories_per_goal_per_day = get_required_calories_per_day_for_goals(goal_ids)
-        print required_calories_per_goal_per_day
-        goals_by_user = dict()
-        # print goals
-        for goal in goals:
-            if goal['user_id'] not in goals_by_user:
-                goals_by_user[goal['user_id']] = [goal]
-            else:
-                goals_by_user.get(goal['user_id']).append(goal)
+def append_popular_slots(user_slots):
+    user_slots_dict = dict(user_slots)
+    for slot in TIME_SLOTS:
+        if len(user_slots) == 5:
+            break
+        slotc = copy.deepcopy(slot)
+        slotc.pop('popularity')
+        slotc.pop('id')
+        if slot['id'] not in user_slots_dict:
+            user_slots.append((slot['id'], {'start': str(slotc['start_time']), 'end': str(slotc['end_time'])}))
+    return user_slots
 
-        # print goals_by_user
+
+def get_user_free_rec_slots():
+    time_slots_by_user_id = get_top_time_slots_for_users()
+    reqd_mins_by_goal_id = get_required_minutes_for_workout_per_day_by_goal()
+    output_by_user_id = dict()
+    for goal_id, metadata in reqd_mins_by_goal_id.iteritems():
+        user_data_list = []
+        free_slots = SessionModel.get_free_slots(
+            metadata['user_id'],
+            metadata['start_date'].strftime("%Y-%m-%d"),
+            metadata['end_date'].strftime("%Y-%m-%d")
+        )
+        rec_slots = append_popular_slots(time_slots_by_user_id[metadata['user_id']]) \
+            if metadata['user_id'] in time_slots_by_user_id \
+            else append_popular_slots([])
+        for date, slots in free_slots.iteritems():
+            existing_session = SessionModel.get_user_sessions_in_duration(
+                    datetime.strptime(date, '%Y-%m-%d %H:%M:%S'),
+                    datetime.strptime(date, '%Y-%m-%d %H:%M:%S') + timedelta(hours=23, minutes=59, seconds=59),
+                    metadata['user_id'])
+            data = {
+                'date': date,
+                'duration': metadata['duration'],
+                'free_slots': slots,
+                'rec_slots': dict(rec_slots).values(),
+                'existing_session': existing_session if existing_session else None
+            }
+            user_data_list.append(data)
+        if metadata['user_id'] in output_by_user_id:
+            output_by_user_id[metadata['user_id']] += user_data_list
+        else:
+            output_by_user_id[metadata['user_id']] = user_data_list
+    return output_by_user_id
 
 if __name__ == "__main__":
-    # get_top_time_slots_for_users()
-    get_goals_by_user_with_required_calories_per_day()
+    get_user_free_rec_slots()

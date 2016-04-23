@@ -3,7 +3,8 @@ from dateutil.relativedelta import relativedelta
 from app.models.activity import Activity
 from app.common.util import Util
 
-
+# TO CONVERT TIME TO CALORIES BASED ON ACTIVITY
+# REFERENCE https://en.wikipedia.org/wiki/Metabolic_equivalent
 ACTIVITY_MET = {
     'walk': 3.6,
     'jog': 7,
@@ -11,6 +12,13 @@ ACTIVITY_MET = {
     'sit': 1,
     'up': 4,
     'down': 3,
+}
+
+# TO CONVERT CALORIES TO TIME BASED ON ACTIVITY
+# REFERENCE https://en.wikipedia.org/wiki/Harris%E2%80%93Benedict_equation
+ACTIVITY_BMR = {
+    'walk': 1.375,
+    'jog': 1.9,
 }
 
 activity_types = Activity.get_activity_type()
@@ -37,8 +45,12 @@ class CaloriesUtil(object):
             return (24 * 60) / ((9.247 * weight) + (3.098 * height) - (4.330 * age) + 447.593)
 
     @staticmethod
-    def get_time_in_minutes_to_burn_calories(calories, activity, weight, height, age, gender):
-        return calories * CaloriesUtil.get_time_in_minutes_for_bmr(weight, height, age, gender) * ACTIVITY_MET.get(activity)
+    def get_time_in_minutes_to_burn_calories(calories, weight, height, age, gender):
+        mins = calories * CaloriesUtil.get_time_in_minutes_for_bmr(weight, height, age, gender)
+        return {
+            'walk': round(mins / ACTIVITY_BMR.get('walk'), 2),
+            'jog': round(mins / ACTIVITY_BMR.get('jog'), 2)
+        }
 
 
 def calculate_calories_burnt_for_activity(bmr, activity_type_id):
