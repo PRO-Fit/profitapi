@@ -6,6 +6,10 @@ from app.common.util import Util
 from app.common.config import session_status
 from app.models.calendars import CalendarModel, CalendarEventsModel
 import time
+from app.models.activity import Activity
+
+activity_type = Activity.get_activity_type()
+
 
 
 class SessionModel(object):
