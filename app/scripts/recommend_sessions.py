@@ -8,6 +8,7 @@ from app.common.util import Util
 from datetime import datetime, timedelta
 from app.models.activity import Activity
 import math
+import json
 from app.scripts.calculate_activity_calories_burnt import CaloriesUtil
 
 TIME_SLOTS = Db.execute_select_query("SELECT * FROM t_time_slots_to_recommend ORDER BY popularity ASC")
@@ -206,13 +207,15 @@ def get_user_free_rec_slots():
 
 def get_rec_sessions():
     input = get_user_free_rec_slots()
-    MAX_LENGTH = 60
+    print json.dumps(input)
+    MAX_LENGTH = 45
     for user, days in input.iteritems():
         result = []
         lst_pre_act = Activity.get_activity_by_priority(user)
         pref_activity = lst_pre_act[0]
         global done
         for day in days:
+
             session = {"user_id": user, "start_datetime": "", "end_datetime": "", "session_type": "NOT_NOTIFIED"}
             today = day.get("date")[:10]
             fslots = day.get("free_slots")
@@ -251,11 +254,8 @@ def get_rec_sessions():
             # if existing session is not available for the day
             else:
                 # per rec session check conflict with available slots
-                global done
                 done = False
                 for rec_session in rslots:
-                    if done:
-                        break
                     for a_session in fslots:
                         latest_start = max(Util.convert_string_to_datetime(today+" "+rec_session.get("start")),
                                            Util.convert_string_to_datetime(today+" "+a_session.get("start")))
@@ -266,15 +266,21 @@ def get_rec_sessions():
                         temp_overlap = (earliest_end - latest_start).seconds/60
                         act_length = math.floor(day.get("duration").get(pref_activity))
 
-                        if temp_overlap >= act_length:
+                        if temp_overlap >= act_length or temp_overlap >= MAX_LENGTH:
                             session["start_datetime"] = str(latest_start)
-                            session["end_datetime"] = str(latest_start + timedelta(minutes=act_length))
+                            if act_length> MAX_LENGTH:
+                                session["end_datetime"] = str(latest_start + timedelta(minutes=MAX_LENGTH))
+                            else:
+                                session["end_datetime"] = str(latest_start + timedelta(minutes=act_length))
                             result.append({day.get("date")[:10]: session})
                             done = True
                             break
 
+                    if done:
+                        break
+
         # TODO: add session to database
-        print result
+        print json.dumps(result)
 
 if __name__ == "__main__":
     get_rec_sessions()
