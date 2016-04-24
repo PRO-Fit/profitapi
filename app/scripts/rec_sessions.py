@@ -4,55 +4,10 @@ from app.models.activity import Activity
 from app.scripts.test_data import input
 import math
 
+# back up code
 def get_rec_session():
 
     MAX_LENGTH = 60
-
-    # input = {
-    #     "test_user1": [{
-    #         "date": "2016-04-15",
-    #         "duration": {
-    #             "jog": 30,
-    #             "walk": 25
-    #         },
-    #         "free_slots": [
-    #             {
-    #                 "start": "06:00:00",
-    #                 "end": "11:30:00"
-    #             },
-    #             {
-    #                 "start": "13:00:00",
-    #                 "end": "18:30:00"
-    #             },
-    #             {
-    #                 "start": "21:00:00",
-    #                 "end": "23:30:00"
-    #             }
-    #         ],
-    #         "rec_slots": [
-    #             {
-    #                 "start": "6:30:00",
-    #                 "end": "8:30:00"
-    #             },
-    #             {
-    #                 "start": "10:30:00",
-    #                 "end": "11:30:00"
-    #             },
-    #             {
-    #                 "start": "15:30:00",
-    #                 "end": "17:30:00"
-    #             }
-    #         ],
-    #         # "existing_session": {
-    #         #     "start_time": "2016-04-15 6:30:00",
-    #         #     "end_time": "2016-04-15 7:05:00",
-    #         #     "activity_type": "jog",
-    #         #     "calories": 100
-    #         # }
-    #     }
-    #     ]
-    # }
-
     for user, days in input.iteritems():
         result = []
         lst_pre_act = Activity.get_activity_by_priority(user)
@@ -123,24 +78,5 @@ def get_rec_session():
                     free_session
 
         print result
-
-
-    # get the existing session length and modify the length by session_time
-
-    # with same start_date, add or remove additional time from the session
-
-    # check if modified session fits into free slots?
-
-        # if yes, then return the session
-        # if no, then check for the interaction of rslots and fslots and try to reschedule on this time
-
-    # if existing session is not there,
-
-        # try to find the intersection from fslots and rslots
-        # find the interaction of length greater than the activity mins
-
-        # if find then send, or else leave blank for that day
-
-
 
 get_rec_session()
