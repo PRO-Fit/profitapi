@@ -3,8 +3,8 @@ from app.common.util import Util
 from app.models.activity import Activity
 import requests
 from app.common.config import CAL_CONFIG, GMAIL_EVENTS_URLS
-import json
 import iso8601
+
 
 class CalendarModel(object):
     @staticmethod

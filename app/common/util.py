@@ -1,8 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import time
-from datetime import datetime
 import phonenumbers
-
 
 
 class Util():
@@ -50,6 +48,10 @@ class Util():
         return number.national_number
 
     @staticmethod
+    def get_future_date(days_in_future=7):
+        return datetime.combine(date.today() + timedelta(days=days_in_future), datetime.min.time())
+
+    @staticmethod
     def get_weekday(date):
         days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         dayNumber = date.weekday()
@@ -57,5 +59,5 @@ class Util():
 
     @staticmethod
     def daterange(start_date, end_date):
-        for n in range(int ((end_date - start_date).days)):
+        for n in range(int((end_date - start_date).days + 1)):
             yield start_date + timedelta(n)

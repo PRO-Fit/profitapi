@@ -143,11 +143,11 @@ class SessionModel(object):
         if type(end_time) is datetime:
             end_time = end_time.strftime("%Y-%m-%d %H:%M:%S")
         query = """SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
-                    FROM t_user_session WHERE start_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    FROM t_user_session WHERE start_datetime BETWEEN '%(start_time)s' AND '%(end_time)s'
                     AND session_status IN ('%(session_status)s') %(user_id_query)s
                     UNION
                     SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
-                    FROM t_user_session WHERE end_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    FROM t_user_session WHERE end_datetime BETWEEN '%(start_time)s' AND '%(end_time)s'
                     AND session_status IN ('%(session_status)s') %(user_id_query)s
                     ORDER BY start_datetime ASC"""
         user_id_query = ""
@@ -193,7 +193,6 @@ class SessionModel(object):
         for day in dates:
             new_day = DateObject(day)
             new_day.day = Util.get_weekday(day)
-            print new_day.day
             list_of_dateobject.append(new_day)
 
         # get all block_session for user
@@ -218,7 +217,7 @@ class SessionModel(object):
 
         # populate blocked sessions in list_of_dateObject
         for date_object in list_of_dateobject:
-            date_object.block_sessions = block_sessions_for_day.get(date_object.day)
+            date_object.block_sessions = block_sessions_for_day.get(date_object.day, [])
 
         # populate events from google in list_of_dateObject
         for date_object in list_of_dateobject:
@@ -231,26 +230,29 @@ class SessionModel(object):
 
         # calculate free slots for each object in list_of_dateObject
         for date_object in list_of_dateobject:
+
             all_sessions = date_object.block_sessions + date_object.google_events
 
             # sort all_sessions to get free slots
-            all_sessions.sort(key=lambda r: r.start)
-            for x, y in zip(all_sessions, all_sessions[1:]):
-                if x.end < y.start:
-                    start = x.end
-                    end = y.start
-                    date_object.free_slots.append({"start": time.strftime('%H:%M:%S', start),
-                                                   "end": time.strftime('%H:%M:%S', end)})
+            if all_sessions:
+                all_sessions.sort(key=lambda r: r.start)
+                for x, y in zip(all_sessions, all_sessions[1:]):
+                    if x.end < y.start:
+                        start = x.end
+                        end = y.start
+                        date_object.free_slots.append({"start": time.strftime('%H:%M:%S', start),
+                                                       "end": time.strftime('%H:%M:%S', end)})
 
-            # if first reserved slot is not starting with mid-night then add delta in free slots
-            if all_sessions[0].start > Util.convert_string_to_time("00:00:00"):
-                date_object.free_slots.append(
-                    {"start": "00:00:00", "end": time.strftime('%H:%M:%S', all_sessions[0].start)})
+                # if first reserved slot is not starting with mid-night then add delta in free slots
 
-            # if last reserved slot is not ending at mid-night then add delta in free slots
-            if all_sessions[-1].end < Util.convert_string_to_time("23:59:59"):
-                date_object.free_slots.append(
-                    {"start": time.strftime('%H:%M:%S', all_sessions[-1].end), "end": "23:59:59"})
+                if all_sessions[0].start > Util.convert_string_to_time("00:00:00"):
+                    date_object.free_slots.append({"start": "00:00:00", "end": time.strftime('%H:%M:%S', all_sessions[0].start)})
+
+                # if last reserved slot is not ending at mid-night then add delta in free slots
+                if all_sessions[-1].end < Util.convert_string_to_time("23:59:59"):
+                    date_object.free_slots.append({"start": time.strftime('%H:%M:%S', all_sessions[-1].end), "end": "23:59:59"})
+            else:
+                date_object.free_slots.append({"start": "00:00:00", "end": "23:59:59"})
 
         # return result from list_of_dateObject
         result = {}
@@ -388,12 +390,12 @@ class DateObject(object):
         self.date = date
         self.day = None
         self.google_events = []
-        self.block_sessions = None
+        self.block_sessions = []
         self.free_slots = []
 
     def __str__(self):
-        return "" + self.date + " ~ " + self.day + " ~ " + self.block_sessions + " ~ " + \
-               self.google_events + " ~ " + self.free_slots
+        return "" + str(self.date) + " ~ " + self.day + " ~ " + self.block_sessions + " ~ " +\
+                self.google_events + " ~ " + self.free_slots
 
 
 class TimeSlot(object):
