@@ -13,7 +13,6 @@ activity_type = Activity.get_activity_type()
 
 
 class SessionModel(object):
-
     @staticmethod
     def insert_user_session(user_id, session_details):
         if SessionModel._has_session_period_overlap(user_id, session_details['start_datetime'],
@@ -21,6 +20,7 @@ class SessionModel(object):
             return -2
         query = """INSERT INTO t_user_session (
                     user_id,
+                    name,
                     workout_type_id,
                     start_datetime,
                     end_datetime,
@@ -30,6 +30,7 @@ class SessionModel(object):
                     modified_datetime
                     ) VALUES (
                     %(user_id)s,
+                    %(name)s,
                     %(workout_type_id)s,
                     %(start_datetime)s,
                     %(end_datetime)s,
@@ -44,7 +45,7 @@ class SessionModel(object):
         return Db.execute_insert_query(query, session_details)
 
     @staticmethod
-    def _has_session_period_overlap(user_id, start_datetime, end_datetime, session_id = None):
+    def _has_session_period_overlap(user_id, start_datetime, end_datetime, session_id=None):
         user_sessions = SessionModel.get_user_sessions(user_id, start=Util.get_current_datetime())
         new_start = Util.convert_string_to_datetime(start_datetime)
         new_end = Util.convert_string_to_datetime(end_datetime)
@@ -60,22 +61,25 @@ class SessionModel(object):
 
     @staticmethod
     def get_user_sessions(user_id, start=None, end=None, session_id=None):
-
         query = """SELECT
-                      id,
+                      tus.id,
                       user_id,
-                      workout_type_id,
+                      name,
+                      twt.type,
                       start_datetime,
                       end_datetime,
                       session_feedback_id,
                       session_status
-                    FROM t_user_session
+                    FROM t_user_session tus
+                    INNER JOIN t_workout_type twt ON tus.workout_type_id = twt.id
                     WHERE
                       user_id = '%(user_id)s'
+                      AND session_status IN ('%(session_status)s')
                       """
-
+        sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED]
         parameters = {
             'user_id': user_id,
+            'session_status': "','".join(sessions),
         }
 
         if session_id:
@@ -121,6 +125,7 @@ class SessionModel(object):
         query = """UPDATE t_user_session
                    SET
                    user_id = '%(user_id)s',
+                   name = '%(name)s',
                    workout_type_id = '%(workout_type_id)s',
                    start_datetime = '%(start_datetime)s',
                    end_datetime = '%(end_datetime)s',
@@ -142,11 +147,11 @@ class SessionModel(object):
         if type(end_time) is datetime:
             end_time = end_time.strftime("%Y-%m-%d %H:%M:%S")
         query = """SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
-                    FROM t_user_session WHERE start_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    FROM t_user_session WHERE start_datetime BETWEEN '%(start_time)s' AND '%(end_time)s'
                     AND session_status IN ('%(session_status)s') %(user_id_query)s
                     UNION
                     SELECT id, user_id, workout_type_id, start_datetime, end_datetime, session_status
-                    FROM t_user_session WHERE end_datetime BETWEEN'%(start_time)s' AND '%(end_time)s'
+                    FROM t_user_session WHERE end_datetime BETWEEN '%(start_time)s' AND '%(end_time)s'
                     AND session_status IN ('%(session_status)s') %(user_id_query)s
                     ORDER BY start_datetime ASC"""
         user_id_query = ""
@@ -192,7 +197,6 @@ class SessionModel(object):
         for day in dates:
             new_day = DateObject(day)
             new_day.day = Util.get_weekday(day)
-            print new_day.day
             list_of_dateobject.append(new_day)
 
         # get all block_session for user
@@ -217,38 +221,42 @@ class SessionModel(object):
 
         # populate blocked sessions in list_of_dateObject
         for date_object in list_of_dateobject:
-            date_object.block_sessions = block_sessions_for_day.get(date_object.day)
+            date_object.block_sessions = block_sessions_for_day.get(date_object.day, [])
 
         # populate events from google in list_of_dateObject
         for date_object in list_of_dateobject:
             date = date_object.date
             for session in events_from_google:
                 if session['date'] == str(date)[:10]:
-
                     time_slot = TimeSlot(Util.convert_string_to_time(session['start_datetime'][11:]),
-                                 Util.convert_string_to_time(session['end_datetime'][11:]))
+                                         Util.convert_string_to_time(session['end_datetime'][11:]))
                     date_object.google_events.append(time_slot)
 
         # calculate free slots for each object in list_of_dateObject
         for date_object in list_of_dateobject:
+
             all_sessions = date_object.block_sessions + date_object.google_events
 
             # sort all_sessions to get free slots
-            all_sessions.sort(key=lambda r: r.start)
-            for x, y in zip(all_sessions, all_sessions[1:]):
-                if x.end < y.start:
-                    start = x.end
-                    end = y.start
-                    date_object.free_slots.append({"start": time.strftime('%H:%M:%S', start),
-                                                   "end": time.strftime('%H:%M:%S', end)})
+            if all_sessions:
+                all_sessions.sort(key=lambda r: r.start)
+                for x, y in zip(all_sessions, all_sessions[1:]):
+                    if x.end < y.start:
+                        start = x.end
+                        end = y.start
+                        date_object.free_slots.append({"start": time.strftime('%H:%M:%S', start),
+                                                       "end": time.strftime('%H:%M:%S', end)})
 
-            # if first reserved slot is not starting with mid-night then add delta in free slots
-            if all_sessions[0].start > Util.convert_string_to_time("00:00:00"):
-                date_object.free_slots.append({"start": "00:00:00", "end": time.strftime('%H:%M:%S', all_sessions[0].start)})
+                # if first reserved slot is not starting with mid-night then add delta in free slots
 
-            # if last reserved slot is not ending at mid-night then add delta in free slots
-            if all_sessions[-1].end < Util.convert_string_to_time("23:59:59"):
-                date_object.free_slots.append({"start": time.strftime('%H:%M:%S', all_sessions[-1].end), "end": "23:59:59"})
+                if all_sessions[0].start > Util.convert_string_to_time("00:00:00"):
+                    date_object.free_slots.append({"start": "00:00:00", "end": time.strftime('%H:%M:%S', all_sessions[0].start)})
+
+                # if last reserved slot is not ending at mid-night then add delta in free slots
+                if all_sessions[-1].end < Util.convert_string_to_time("23:59:59"):
+                    date_object.free_slots.append({"start": time.strftime('%H:%M:%S', all_sessions[-1].end), "end": "23:59:59"})
+            else:
+                date_object.free_slots.append({"start": "00:00:00", "end": "23:59:59"})
 
         # return result from list_of_dateObject
         result = {}
@@ -259,7 +267,6 @@ class SessionModel(object):
 
 
 class BlockSessionModel(object):
-
     @staticmethod
     def create_block_session(user_id, session_details):
         result_row = 0
@@ -271,7 +278,7 @@ class BlockSessionModel(object):
 
         for day in days:
             if BlockSessionModel._has_session_period_overlap(user_id, session_details['start_time'],
-                                    session_details['end_time'], day):
+                                                             session_details['end_time'], day):
                 if len(days) == 1:
                     return -2
                 continue
@@ -331,7 +338,8 @@ class BlockSessionModel(object):
     @staticmethod
     def update_block_session(user_id, session_id, session_details):
         if BlockSessionModel._has_session_period_overlap(user_id, session_details['start_time'],
-                                session_details['end_time'], session_details['day_of_week'], session_id):
+                                                         session_details['end_time'], session_details['day_of_week'],
+                                                         session_id):
             return -2
         query = """
              UPDATE t_user_blocked_session
@@ -386,11 +394,11 @@ class DateObject(object):
         self.date = date
         self.day = None
         self.google_events = []
-        self.block_sessions = None
+        self.block_sessions = []
         self.free_slots = []
 
     def __str__(self):
-        return "" + self.date + " ~ " + self.day + " ~ " + self.block_sessions + " ~ " +\
+        return "" + str(self.date) + " ~ " + self.day + " ~ " + self.block_sessions + " ~ " +\
                 self.google_events + " ~ " + self.free_slots
 
 
