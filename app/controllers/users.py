@@ -6,6 +6,7 @@ from flask.ext.restful import abort
 from app.models.users import User
 from app.common.errors import error_enum
 from app.common.util import Util
+from app.models.sessions import BlockSessionModel
 
 user_activity_preference_args = {
     'run': fields.Int(missing=1),
@@ -59,6 +60,11 @@ class UserController(Resource):
         if user_id is -1:
             abort(http_status_code=400, error_code=error_enum.user_id_duplicate)
         User.insert_user_activity_pref(user_id, activity_pref)
+        BlockSessionModel.create_block_session(args['user_id'], {
+            'day_of_week': 'All',
+            'start_time': "00:00:00",
+            'end_time': "05:59:59"
+        })
         return {'user_id': user_id}
 
     @use_args(user_args_put)
