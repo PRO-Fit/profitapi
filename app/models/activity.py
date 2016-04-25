@@ -35,3 +35,14 @@ class Activity(object):
         query = """ INSERT INTO t_goal_activity (user_id, goal_id, activity_id, session_id)
                     VALUES""" + ",".join(goal_activities)
         return Db.execute_insert_query(query)
+
+    @staticmethod
+    def get_activity_by_priority(user_id):
+        query = """SELECT twt.type FROM t_user_activity_preference tuap
+                    INNER JOIN t_user tu ON tu.id = tuap.user_id
+                    INNER JOIN t_workout_type twt ON twt.id = tuap.workout_type_id
+                    WHERE tu.user_id = '%s'
+                    AND twt.type IN ('walk', 'jog')
+                    ORDER BY preference_priority DESC
+                """
+        return [atype['type'] for atype in Db.execute_select_query(query % user_id)]
