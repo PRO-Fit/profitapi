@@ -88,7 +88,8 @@ class Goal(object):
         new_start = Util.convert_string_to_datetime(start_datetime)
         new_end = Util.convert_string_to_datetime(end_datetime)
         for goal in user_active_goals:
-            if goal_id and int(goal.get('id')) != int(goal_id):
+                if goal_id and int(goal.get('id')) == int(goal_id):
+                    continue
                 start = goal.get('start_datetime')
                 end = goal.get('end_datetime')
                 if start <= new_start < end or start <= new_end <= end or new_start <= start < new_end:
