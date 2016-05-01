@@ -1,6 +1,6 @@
 from app.controllers.users import UserController, UserPreferenceController, UserConnectionsController
 from app.controllers.goals import GoalController
-
+from app.controllers.analytics import AnalyticsController
 user_api_config = [
     {
         'endpoint': UserController,
@@ -26,6 +26,12 @@ user_api_config = [
         'endpoint': UserConnectionsController,
         'routes': [
             '/v1/users/<user_id>/connections'
+            ]
+    },
+    {
+        'endpoint': AnalyticsController,
+        'routes': [
+            '/v1/users/<user_id>/analytics'
             ]
     }
 ]
