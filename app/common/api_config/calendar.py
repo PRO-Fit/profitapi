@@ -1,6 +1,6 @@
 from app.controllers.calendars import CalendarAuthController, CalendarAuthRedirectController, UserCalendarController,\
                                       CalendarEventsController
-from app.controllers.sessions import UserSessionController, UserBlockedSessionController, FreeSlotsController
+from app.controllers.sessions import UserSessionController, UserBlockedSessionController, FreeSlotsController, NotificationController
 
 calendar_api_config = [
     {
@@ -47,6 +47,13 @@ calendar_api_config = [
         'endpoint': FreeSlotsController,
         'routes': [
             '/v1/users/<user_id>/calendars/freeslots'
+        ]
+    },
+    {
+        'endpoint': NotificationController,
+        'routes': [
+            '/v1/users/<user_id>/notifications/sessions',
+            '/v1/users/<user_id>/notifications/sessions/<session_id>',
         ]
     }
 ]

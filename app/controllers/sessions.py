@@ -146,3 +146,42 @@ class FreeSlotsController(Resource):
         end = args.get('end')
 
         return SessionModel.get_free_slots(user_id, start, end)
+
+
+class NotificationController(Resource):
+
+    def get(self, user_id):
+        if not user_id:
+            abort(http_status_code=400, error_code=error_enum.user_id_missing)
+
+        now = Util.get_current_datetime()
+        then = Util.get_future_date(days_in_future=7)
+
+        sessions = [session_status.NOT_NOTIFIED, session_status.NOTIFIED]
+        result = SessionModel.get_user_sessions(user_id, now, then, session_types=sessions)
+
+        for session in result:
+            SessionModel.update_session_status(user_id, session['id'], 'NOTIFIED')
+
+        return result
+
+    def put(self, user_id, session_id):
+
+        args = request.args
+        if not user_id:
+            abort(http_status_code=400, error_code=error_enum.user_id_missing)
+
+        if not session_id:
+            abort(http_status_code=400, error_code=error_enum.session_not_found)
+
+        session_status = args.get('session_status')
+
+        if not session_status:
+            abort(http_status_code=400, error_code=error_enum.invalid_session_not_found)
+
+        success = SessionModel.update_session_status(user_id, session_id, session_status)
+        if success is -1:
+            abort(http_status_code=500, error_code=error_enum.database_error_updating)
+
+        return None, 200
+

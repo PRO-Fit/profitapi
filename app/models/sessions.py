@@ -11,7 +11,6 @@ from app.models.activity import Activity
 activity_type = Activity.get_activity_type()
 
 
-
 class SessionModel(object):
     @staticmethod
     def insert_user_session(user_id, session_details):
@@ -59,11 +58,13 @@ class SessionModel(object):
                 return True
         return False
 
+    # session_types is tuple of session status
     @staticmethod
-    def get_user_sessions(user_id, start=None, end=None, session_id=None):
+    def get_user_sessions(user_id, start=None, end=None, session_id=None, session_types=None):
         query = """SELECT
                       tus.id,
                       user_id,
+                      workout_type_id,
                       name,
                       twt.type,
                       start_datetime,
@@ -76,7 +77,11 @@ class SessionModel(object):
                       user_id = '%(user_id)s'
                       AND session_status IN ('%(session_status)s')
                       """
-        sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED]
+
+        if session_types:
+            sessions = session_types
+        else:
+            sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED]
         parameters = {
             'user_id': user_id,
             'session_status': "','".join(sessions),
@@ -96,6 +101,10 @@ class SessionModel(object):
             end_clause = """ AND end_datetime <= '%(end)s'"""
             query += end_clause
             parameters['end'] = str(end)
+
+        # if session_types:
+        #     type_clause = ' AND session_status IN (' + ','.join((str(n) for n in session_types)) + ')'
+        #     query += type_clause
 
         return Util.convert_datetime_to_str(Db.execute_select_query(query, parameters))
 
@@ -137,6 +146,23 @@ class SessionModel(object):
 
         session_details['user_id'] = user_id
         session_details['session_id'] = session_id
+        session_details['modified_datetime'] = Util.get_current_time()
+        return Db.execute_update_query(query, session_details)
+
+    @staticmethod
+    def update_session_status(user_id, session_id, session_status):
+
+        query = """UPDATE t_user_session
+                   SET
+                   session_status = '%(session_status)s',
+                   modified_datetime = '%(modified_datetime)s'
+                   WHERE id = '%(session_id)s' AND user_id = '%(user_id)s'
+                   """
+
+        session_details = {}
+        session_details['user_id'] = user_id
+        session_details['session_id'] = session_id
+        session_details['session_status'] = session_status
         session_details['modified_datetime'] = Util.get_current_time()
         return Db.execute_update_query(query, session_details)
 

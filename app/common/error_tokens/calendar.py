@@ -6,5 +6,6 @@ tokens = [
     'invalid_email_syntax',
     'fitness_session_overlap',
     'session_not_found',
-    'invalid_session_status'
+    'invalid_session_status',
+    'invalid_session_not_found'
 ]

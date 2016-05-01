@@ -17,10 +17,10 @@ DB_CONFIG = {
 }
 
 CAL_CONFIG = {
-    'CLIENT_ID' : '761634219599-k2egp1a53gae9hv723tjr7ukauuinuo9.apps.googleusercontent.com',
-    'CLIENT_SECRET' : 'aOkLp_klNre103WCMt8P9nHu',  # Read from a file or environmental variable in a real app
-    'SCOPE' : 'https://www.googleapis.com/auth/calendar.readonly',
-    'REDIRECT_URI' : 'http://127.0.0.1:5000/v1/calendars/google/oauth2callback'
+    'CLIENT_ID': '761634219599-k2egp1a53gae9hv723tjr7ukauuinuo9.apps.googleusercontent.com',
+    'CLIENT_SECRET': 'aOkLp_klNre103WCMt8P9nHu',  # Read from a file or environmental variable in a real app
+    'SCOPE': 'https://www.googleapis.com/auth/calendar.readonly',
+    'REDIRECT_URI': 'http://ec2-54-67-63-89.us-west-1.compute.amazonaws.com:8080/v1/calendars/google/oauth2callback'
 }
 
 # created mailgun acount to verify the email address whether it exists or not.
@@ -38,7 +38,7 @@ GMAIL_EVENTS_URLS = {
     'ACCESS_TOKEN': 'https://www.googleapis.com/oauth2/v4/token'
 }
 
-SESSION_STATUS = ['USER_CREATED', 'REC_ACCEPTED', 'REC_REJECTED', 'NOT_NOTIFIED']
+SESSION_STATUS = ['USER_CREATED', 'REC_ACCEPTED', 'REC_REJECTED', 'NOT_NOTIFIED', 'NOTIFIED']
 
 session_status = namedtuple(
     'SESSION_STATUS',
