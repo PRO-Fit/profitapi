@@ -76,7 +76,7 @@ class Analytics(object):
                 SELECT
                   SUM(distance) distance,
                   TRUNCATE(SUM(calories_burnt),2) calories,
-                  DATE_FORMAT(FROM_UNIXTIME(start_datetime/1000), '%Y-%d-%m') as activity_date
+                  DATE_FORMAT(FROM_UNIXTIME(start_datetime/1000), '%Y-%m-%d') as activity_date
                 FROM t_user_activity
                 WHERE user_id = '{}'
                 GROUP BY activity_date
