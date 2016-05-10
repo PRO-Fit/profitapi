@@ -82,8 +82,8 @@ class Analytics(object):
                 GROUP BY activity_date
                 HAVING activity_date BETWEEN '{}' and '{}'
                 """
-        start =  Util.get_current_datetime(),
-        end = Util.get_future_date(-30)
+        start = Util.get_future_date(-30).strftime('%Y-%m-%d')
+        end = Util.get_current_datetime().strftime('%Y-%m-%d')
         result = {row['activity_date']: {'calories': row['calories'], 'distance': float(row['distance'])} for row in Db.execute_select_query(query.format(user_id, start, end))}
         calories = []
         distance = []
