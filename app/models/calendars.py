@@ -28,12 +28,12 @@ class CalendarModel(object):
 
     @staticmethod
     def delete_email(email_add):
-        delete_email_query = "DELETE from profit.t_user_external_account WHERE email= \"%s\"" %email_add
+        delete_email_query = "DELETE from t_user_external_account WHERE email= \"%s\"" %email_add
         return Db.execute_update_query(delete_email_query)
 
     @staticmethod
     def get_all_emails(user_id, email_id=None):
-        get_email_query = "SELECT id, user_id, email, created_datetime, modified_datetime from profit.t_user_external_account where user_id =  \"%s\"" %user_id
+        get_email_query = "SELECT id, user_id, email, created_datetime, modified_datetime from t_user_external_account where user_id =  \"%s\"" %user_id
         if email_id:
             get_email_query+=" AND email = \"%s\"" %email_id
 
@@ -43,7 +43,7 @@ class CalendarModel(object):
     def get_all_accounts_detail(user_id):
         query = """
                 SELECT *
-                FROM profit.t_user_external_account WHERE user_id =  \"%s\"""" %user_id
+                FROM t_user_external_account WHERE user_id =  \"%s\"""" %user_id
 
         return Db.execute_select_query(query)
 
