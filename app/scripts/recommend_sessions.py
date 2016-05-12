@@ -207,7 +207,7 @@ def get_user_free_rec_slots():
 
 def get_rec_sessions():
     input = get_user_free_rec_slots()
-    print json.dumps(input)
+    act_type = Activity.get_activity_type()
     MAX_LENGTH = 45
     for user, days in input.iteritems():
         result = []
@@ -216,7 +216,9 @@ def get_rec_sessions():
         global done
         for day in days:
 
-            session = {"user_id": user, "start_datetime": "", "end_datetime": "", "session_type": "NOT_NOTIFIED"}
+            session = {"user_id": user, "start_datetime": "", "end_datetime": "", "session_status": "NOT_NOTIFIED",
+                       "name": "Smart Session", "session_feedback_id": 0, "workout_type_id": act_type.get(pref_activity) }
+
             today = day.get("date")[:10]
             fslots = day.get("free_slots")
             rslots = day.get("rec_slots")
@@ -225,16 +227,18 @@ def get_rec_sessions():
 
             # if existing session is available for the day
             if c_session:
-                s_start = Util.convert_string_to_datetime(c_session.get('start_time'))
-                s_end = Util.convert_string_to_datetime(c_session.get('end_time'))
+                c_session = c_session[0]
+                s_start = c_session.get('start_datetime')
+                s_end = c_session.get('end_datetime')
                 s_length = (s_end - s_start).seconds/60
 
                 given_length = math.floor(day.get("duration").get(pref_activity))
 
-                # TODO: add logic to check the max length of session
-
                 delta = s_length + (given_length - s_length)
-                new_end = s_start + timedelta(minutes=delta)
+                if(delta > MAX_LENGTH):
+                    new_end = s_start + timedelta(minutes=MAX_LENGTH)
+                else:
+                    new_end = s_start + timedelta(minutes=delta)
 
                 # check for free slots if it contains the slot
                 for slot in fslots:
@@ -245,8 +249,8 @@ def get_rec_sessions():
                     if s_start >= tmp_st and new_end <= tmp_end:
                         session["start_datetime"] = str(s_start)
                         session["end_datetime"] = str(new_end)
-
-                        # TODO: add session to database
+                        
+                        SessionModel.update_session(user, str(c_session.get("id")), session)
                         result.append({day.get("date")[:10]: session})
                         done = True
                         break
@@ -272,6 +276,9 @@ def get_rec_sessions():
                                 session["end_datetime"] = str(latest_start + timedelta(minutes=MAX_LENGTH))
                             else:
                                 session["end_datetime"] = str(latest_start + timedelta(minutes=act_length))
+
+                            # TODO: add session to database
+                            SessionModel.insert_user_session(user, session)
                             result.append({day.get("date")[:10]: session})
                             done = True
                             break
@@ -279,7 +286,6 @@ def get_rec_sessions():
                     if done:
                         break
 
-        # TODO: add session to database
         print json.dumps(result)
 
 if __name__ == "__main__":
