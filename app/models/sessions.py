@@ -183,7 +183,7 @@ class SessionModel(object):
         user_id_query = ""
         if user_id:
             user_id_query = " AND user_id = '%s'" % user_id
-        sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED]
+        sessions = [session_status.USER_CREATED, session_status.REC_ACCEPTED, session_status.NOT_NOTIFIED, session_status.NOTIFIED]
         params = {
             'start_time': start_time,
             'end_time': end_time,

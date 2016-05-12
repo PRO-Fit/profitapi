@@ -240,6 +240,9 @@ def get_rec_sessions():
                 else:
                     new_end = s_start + timedelta(minutes=delta)
 
+                if(delta > MAX_LENGTH):
+                    given_length = MAX_LENGTH
+
                 # check for free slots if it contains the slot
                 for slot in fslots:
 
@@ -254,6 +257,24 @@ def get_rec_sessions():
                         result.append({day.get("date")[:10]: session})
                         done = True
                         break
+
+                for rec_slot in rslots:
+
+                    tmp_st = Util.convert_string_to_datetime(today+" "+rec_slot.get('start'))
+                    tmp_end = Util.convert_string_to_datetime(today+" "+rec_slot.get('end'))
+
+                    tmp_length = (tmp_end - tmp_st).seconds/60
+
+                    if(tmp_length > given_length):
+
+                        session["start_datetime"] = str(tmp_st)
+                        session["end_datetime"] = str(tmp_st + timedelta(minutes=given_length))
+                        
+                        SessionModel.update_session(user, str(c_session.get("id")), session)
+                        result.append({day.get("date")[:10]: session})
+                        done = True
+                        break
+
 
             # if existing session is not available for the day
             else:
@@ -286,7 +307,7 @@ def get_rec_sessions():
                     if done:
                         break
 
-        print json.dumps(result)
+        #print json.dumps(result)
 
 if __name__ == "__main__":
     get_rec_sessions()
