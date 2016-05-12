@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.common.database import Db
 from app.common.util import Util
 HOURS = ["0:00", "1:00", "2:00", "3:00", "4:00", "5:00", "6:00", "7:00", "8:00", "9:00", "10:00", "11:00", "12:00",
@@ -53,11 +55,12 @@ class Analytics(object):
             'start_datetime': int(Util.get_future_date(-7).strftime('%s')) * 1000,
             'end_datetime': int(Util.get_current_datetime().strftime('%s')) * 1000
         }
-
+        week_day_index = WEEK_DAYS.index(datetime.now().strftime("%A")[:3])
+        week_days = WEEK_DAYS[week_day_index:] + WEEK_DAYS[:week_day_index]
         result = {row['weekday']: {'calories': row['calories'], 'distance': float(row['distance'])} for row in Db.execute_select_query(query % params)}
         calories = []
         distance = []
-        for day in WEEK_DAYS:
+        for day in week_days:
             if WEEK_DAYS.index(day) in result:
                 calories.append(result[WEEK_DAYS.index(day)]['calories'])
                 distance.append(result[WEEK_DAYS.index(day)]['distance'])
@@ -65,7 +68,7 @@ class Analytics(object):
                 calories.append(0.0)
                 distance.append(0.0)
         return {
-            'weekdays': WEEK_DAYS,
+            'weekdays': week_days,
             'calories': calories,
             'distance': distance
         }
