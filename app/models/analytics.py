@@ -15,6 +15,7 @@ class Analytics(object):
                   TRUNCATE(SUM(calories_burnt),2) calories,
                   HOUR(TIME(TRUNCATE(FROM_UNIXTIME(start_datetime/1000),0))) dayhour FROM t_user_activity
                 WHERE user_id = '%s'
+                AND DATE_FORMAT(FROM_UNIXTIME(start_datetime/1000), '%Y-%m-%d') = DATE_FORMAT(CURDATE(), '%Y-%m-%d')
                 GROUP BY dayhour
                 """
         result = {row['dayhour']: {'calories': row['calories'], 'distance': float(row['distance'])} for row in Db.execute_select_query(query % user_id)}
