@@ -5,7 +5,8 @@ from flask.ext.restful import abort
 
 from app.common.errors import error_enum
 from app.models.goals import Goal
-
+from app.models.analytics import Analytics
+from app.common.util import Util
 
 class GoalController(Resource):
     user_goal_args = {
@@ -22,6 +23,11 @@ class GoalController(Resource):
         result = Goal.get_user_active_goals(user_id, goal_id)
         if result:
             for record in result:
+                record['calories_burnt'] = 0
+                record['percentage'] = 0
+                if record['start_datetime'] < Util.get_current_datetime():
+                    record['calories_burnt'] = Analytics.get_current_goal_burnt_calories(record['id'])[0]['calories_burnt']
+                    record['percentage'] = round(record['calories_burnt'] * 100 / record['target_burn_calories'], 2)
                 record['start_datetime'] = str(record['start_datetime'])
                 record['end_datetime'] = str(record['end_datetime'])
         return result

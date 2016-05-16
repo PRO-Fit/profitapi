@@ -103,3 +103,14 @@ class Analytics(object):
             'calories': calories,
             'distance': distance
         }
+
+    @staticmethod
+    def get_current_goal_burnt_calories(goal_id):
+        query = """
+                SELECT TRUNCATE(SUM(calories_burnt),2) calories_burnt
+                FROM profitdemo.t_goal_activity tga
+                INNER JOIN profitdemo.t_user_activity tau
+                ON tga.activity_id = tau.id
+                WHERE tga.goal_id = %s
+                """
+        return Db.execute_select_query(query % goal_id)
