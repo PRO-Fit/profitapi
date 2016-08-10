@@ -12,7 +12,7 @@ start_time = ['07:00:00', '06:30:00', '19:00:00', '17:39:00']
 end_time = ['07:35:00', '07:15:00', '19:40:00', '18:00:00']
 status = 'USER_CREATED'
 
-date_range = Util.daterange(Util.convert_string_to_datetime("2016-04-30"), Util.convert_string_to_datetime("2016-05-30"))
+date_range = Util.daterange(Util.convert_string_to_datetime("2016-08-10"), Util.convert_string_to_datetime("2016-08-30"))
 
 
 query_single_insert = """INSERT INTO t_user_session (
@@ -23,7 +23,8 @@ query_single_insert = """INSERT INTO t_user_session (
                     end_datetime,
                     session_status,
                     created_datetime,
-                    modified_datetime
+                    modified_datetime,
+		    session_type
                     ) VALUES (
                     '%(user_id)s',
                     '%(name)s',
@@ -32,7 +33,8 @@ query_single_insert = """INSERT INTO t_user_session (
                     '%(end_datetime)s',
                     '%(session_status)s',
                     '%(created_datetime)s',
-                    '%(modified_datetime)s'
+                    '%(modified_datetime)s',
+		    'PERSONAL'
                     )"""
 
 user_sessions = []
